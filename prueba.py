@@ -8,5 +8,3 @@ def elevador(base:int, exponente:float) -> float:
 
 print(f"Tengo: {elevador(4,5.2)}")
 print("Milito botón")
-
-import numpy as py
