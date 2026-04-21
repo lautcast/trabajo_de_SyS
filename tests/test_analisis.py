@@ -2,7 +2,6 @@
 
 import numpy as np
 
-
 from app.services.acoustic_parameters import integral_schroeder, regresion_lineal
 
 
