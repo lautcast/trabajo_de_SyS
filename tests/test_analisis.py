@@ -1,7 +1,7 @@
 """Tests para los servicios de analisis de parametros acusticos (Milestone 3)."""
 
 import numpy as np
-import pytest
+
 
 from app.services.acoustic_parameters import integral_schroeder, regresion_lineal
 
