@@ -1,10 +1,48 @@
 [project]
-name = "tp"
+name = "rir-api"
 version = "0.1.0"
-description = "Add your description here"
+description = "API REST para procesamiento y analisis de respuestas al impulso segun ISO 3382"
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = [
-    "numpy>=2.4.4",
-    "pandas>=3.0.2",
+license = "MIT"
+requires-python = ">=3.12"
+authors = [
+    { name = "Estudiante", email = "estudiante@example.com" },
 ]
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic",
+    "pydantic-settings",
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "soundfile",
+    "sounddevice",
+    "python-multipart",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "httpx",
+    "ruff",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
