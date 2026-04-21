@@ -1,7 +1,7 @@
 """Tests para los servicios de procesamiento de senales (Milestone 2)."""
 
 import numpy as np
-import pytest
+import pytest as pytest
 
 from app.services.signal_utils import a_escala_log, cargar_audio
 
