@@ -87,7 +87,7 @@ rir-api/
 - [x] Hacer fork del repositorio template.
 - [x] Clonar el fork y verificar que el entorno se instala correctamente.
 - [x] Ejecutar la API: `uvicorn app.main:app --reload`.
-- [ ] Verificar que `/health` responde correctamente.
+- [x] Verificar que `/health` responde correctamente.
 - [ ] Ejecutar los tests (todos deben fallar con `NotImplementedError` excepto los de API).
 - [ ] Verificar que el CI funciona en GitHub Actions.
 
