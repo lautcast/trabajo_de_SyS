@@ -14,8 +14,6 @@ completa de procesamiento acustico: generacion de senales de excitacion, procesa
 de respuestas al impulso por bandas de octava y calculo de parametros acusticos
 (EDT, T20, T30) segun la norma ISO 3382-1.
 
-> **API de referencia**: Explorar la [documentacion interactiva de la API de la catedra](https://rir-api.onrender.com/docs) para entender la estructura de endpoints, schemas y respuestas esperadas.
-
 ## Requisitos previos
 
 - Python 3.12 o superior
@@ -29,9 +27,8 @@ git clone https://github.com/lautcast/trabajo_de_SyS.git
 cd trabajo_de_SyS
 ```
 
-Crear entorno virtual e instalar dependencias
-
 ### Creacion del entorno virtual e instalacion de dependencias
+
 ```bash
 uv sync
 ```
@@ -81,3 +78,77 @@ rir-api/
 ├── pyproject.toml                 # Configuracion del proyecto
 └── README.md
 ```
+
+## Milestones
+
+### M0 — Setup del entorno
+**Fecha:** Semana 5
+
+- [x] Hacer fork del repositorio template.
+- [x] Clonar el fork y verificar que el entorno se instala correctamente.
+- [x] Ejecutar la API: `uvicorn app.main:app --reload`.
+- [ ] Verificar que `/health` responde correctamente.
+- [ ] Ejecutar los tests (todos deben fallar con `NotImplementedError` excepto los de API).
+- [ ] Verificar que el CI funciona en GitHub Actions.
+
+### M1 — Generacion de senales
+**Fecha:** Semana 8
+
+- [ ] Implementar `generar_ruido_rosa()` en `app/services/pink_noise.py`.
+- [ ] Implementar `generar_sine_sweep()` en `app/services/sine_sweep.py`.
+- [ ] Implementar `reproducir_y_grabar()`.
+- [ ] Todos los tests de `test_generacion.py` deben pasar.
+
+### M2 — Procesamiento de senales
+**Fecha:** Semana 12
+
+- [ ] Implementar `cargar_audio()` en `app/services/signal_utils.py`.
+- [ ] Implementar `obtener_ri_desde_sweep()` en `app/services/signal_utils.py`.
+- [ ] Implementar `filtro_octava()` en `app/services/filter.py`.
+- [ ] Implementar `a_escala_log()` en `app/services/signal_utils.py`.
+- [ ] Implementar `sintetizar_ri()` para validacion.
+- [ ] Todos los tests de `test_procesamiento.py` deben pasar.
+
+### M3 — API REST y analisis de parametros acusticos
+**Fecha:** Semana 15
+
+- [ ] Implementar `integral_schroeder()` en `app/services/acoustic_parameters.py`.
+- [ ] Implementar `regresion_lineal()` en `app/services/acoustic_parameters.py`.
+- [ ] Implementar `calcular_parametros_acusticos()` en `app/services/acoustic_parameters.py`.
+- [ ] Crear routers y schemas para exponer toda la funcionalidad como API REST.
+- [ ] Todos los tests de `test_analisis.py` y `test_api.py` deben pasar.
+- [ ] (Opcional) Implementar `metodo_lundeby()`.
+
+## Como correr los tests
+
+```bash
+# Ejecutar todos los tests
+uv run pytest -v
+
+# Ejecutar tests de un modulo especifico
+uv run pytest tests/test_generacion.py -v
+
+# Ejecutar tests de la API
+uv run pytest tests/test_api.py -v
+
+# Ejecutar tests con reporte de cobertura
+uv run pytest --tb=short
+```
+
+## Como correr el linter
+
+```bash
+# Verificar estilo de codigo
+uv run ruff check app/ tests/
+
+# Corregir automaticamente lo que se pueda
+uv run ruff check --fix app/ tests/
+
+# Formatear el codigo
+uv run ruff format app/ tests/
+```
+
+## Licencia
+
+Este proyecto esta licenciado bajo la Licencia MIT. Ver el archivo `LICENSE` para mas detalles.
+
