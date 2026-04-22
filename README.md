@@ -30,12 +30,8 @@ cd trabajo_de_SyS
 ```
 
 Crear entorno virtual e instalar dependencias
-```bash
-python -m venv venv
-source venv/bin/activate
-```
 
-### Instalar dependencias
+### Creacion del entorno virtual e instalacion de dependencias
 ```bash
 uv sync
 ```
@@ -44,7 +40,7 @@ uv sync
 
 ```bash
 # Iniciar la API con hot-reload
-uvicorn app.main:app --reload
+uv run uvicorn app.main:app --reload
 
 # O usando el modulo directamente
 python -m app.main
