@@ -19,7 +19,7 @@ Procesar respuestas al impulso (RIR) y calcular parámetros acústicos según la
 
 - Pellegrino Salvador - Legajo: 75978 - Rol: Backend / API
 - Castrillo Lautaro - Legajo: 70558 - Rol: Procesamiento de señales
-- Maiolo Ivan - Legajo: - Rol: Testing / Documentación
+- Maiolo Ivan - Legajo: 76593 - Rol: Testing / Documentación
 
 ---
 
@@ -30,6 +30,10 @@ Procesar respuestas al impulso (RIR) y calcular parámetros acústicos según la
 - SciPy
 - Pydantic
 - Uvicorn
+- Matplotlib
+- Soundfile
+- Sounddevice
+- Python-multipart
 
 ---
 
