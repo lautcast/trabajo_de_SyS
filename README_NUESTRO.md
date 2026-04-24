@@ -124,8 +124,8 @@ rir-api/
 # --- M2: Procesamiento ---
 
 **feature/filtro-butterworth**                          # Issue #4
-**docs/rango-fc**                                       # Issue #5 (Etiqueta docs)
-**docs/test-senales-conocidas**                         # Issue #6 (Etiqueta docs)
+**docs/rango-fc**                                       # Issue #5 
+**docs/test-senales-conocidas**                         # Issue #6 
 **feature/cargar-audio**                                # Issue #7
 **feature/sintesis-rir**                                # Issue #8
 **feature/deconvolucion**                               # Issue #9
