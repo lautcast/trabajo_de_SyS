@@ -14,8 +14,6 @@ completa de procesamiento acustico: generacion de senales de excitacion, procesa
 de respuestas al impulso por bandas de octava y calculo de parametros acusticos
 (EDT, T20, T30) segun la norma ISO 3382-1.
 
-> **API de referencia**: Explorar la [documentacion interactiva de la API de la catedra](https://rir-api.onrender.com/docs) para entender la estructura de endpoints, schemas y respuestas esperadas.
-
 ## Requisitos previos
 
 - Python 3.12 o superior
@@ -25,19 +23,21 @@ de respuestas al impulso por bandas de octava y calculo de parametros acusticos
 
 ```bash
 # Clonar el repositorio
-git clone <URL-del-fork>
-cd rir-api
+git clone https://github.com/lautcast/trabajo_de_SyS.git
+cd trabajo_de_SyS
+```
 
-# Crear entorno virtual e instalar dependencias
-uv venv
-uv pip install -e ".[dev]"
+### Creacion del entorno virtual e instalacion de dependencias
+
+```bash
+uv sync
 ```
 
 ## Ejecucion
 
 ```bash
 # Iniciar la API con hot-reload
-uvicorn app.main:app --reload
+uv run uvicorn app.main:app --reload
 
 # O usando el modulo directamente
 python -m app.main
@@ -84,10 +84,10 @@ rir-api/
 ### M0 — Setup del entorno
 **Fecha:** Semana 5
 
-- [ ] Hacer fork del repositorio template.
-- [ ] Clonar el fork y verificar que el entorno se instala correctamente.
-- [ ] Ejecutar la API: `uvicorn app.main:app --reload`.
-- [ ] Verificar que `/health` responde correctamente.
+- [x] Hacer fork del repositorio template.
+- [x] Clonar el fork y verificar que el entorno se instala correctamente.
+- [x] Ejecutar la API: `uvicorn app.main:app --reload`.
+- [x] Verificar que `/health` responde correctamente.
 - [ ] Ejecutar los tests (todos deben fallar con `NotImplementedError` excepto los de API).
 - [ ] Verificar que el CI funciona en GitHub Actions.
 
@@ -151,3 +151,4 @@ uv run ruff format app/ tests/
 ## Licencia
 
 Este proyecto esta licenciado bajo la Licencia MIT. Ver el archivo `LICENSE` para mas detalles.
+
