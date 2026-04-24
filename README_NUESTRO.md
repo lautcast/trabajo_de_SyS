@@ -137,7 +137,7 @@ rir-api/
 **feature/integral-schroeder**                          # Issue #12
 **feature/regresion-lineal**                            # Issue #13
 **feature/parametros-iso3382**                          # Issue #14
-
+**feature/lundeby-RI**                                  # Issue #15
 
 # --------------------------------------------------------------
 # GUARDAR Y SUBIR MODIFICACIONES (EL ABC)
