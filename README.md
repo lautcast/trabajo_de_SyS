@@ -177,7 +177,7 @@ git push
 - **feat**: nueva funcionalidad
 - **fix**: corrección de errores
 - **test**: pruebas
-
+- **txt**: documentación
 
 ## Como correr los tests
 
