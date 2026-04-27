@@ -97,7 +97,7 @@ rir-api/
 - [x] Clonar el fork y verificar que el entorno se instala correctamente.
 - [x] Ejecutar la API: `uvicorn app.main:app --reload`.
 - [x] Verificar que `/health` responde correctamente.
-- [ ] Ejecutar los tests (todos deben fallar con `NotImplementedError` excepto los de API).
+- [x] Ejecutar los tests (todos deben fallar con `NotImplementedError` excepto los de API).
 - [x] Verificar que el CI funciona en GitHub Actions.
 
 ### M1 — Generacion de senales
