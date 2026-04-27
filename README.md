@@ -98,7 +98,7 @@ rir-api/
 - [x] Ejecutar la API: `uvicorn app.main:app --reload`.
 - [x] Verificar que `/health` responde correctamente.
 - [ ] Ejecutar los tests (todos deben fallar con `NotImplementedError` excepto los de API).
-- [ ] Verificar que el CI funciona en GitHub Actions.
+- [x] Verificar que el CI funciona en GitHub Actions.
 
 ### M1 — Generacion de senales
 **Fecha:** Semana 8
