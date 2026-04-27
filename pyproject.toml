@@ -19,6 +19,8 @@ dependencies = [
     "soundfile",
     "sounddevice",
     "python-multipart",
+    "pytest>=9.0.3",
+    "httpx>=0.28.1",
 ]
 
 [project.optional-dependencies]

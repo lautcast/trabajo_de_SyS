@@ -14,6 +14,13 @@ completa de procesamiento acustico: generacion de senales de excitacion, procesa
 de respuestas al impulso por bandas de octava y calculo de parametros acusticos
 (EDT, T20, T30) segun la norma ISO 3382-1.
 
+## Integrantes
+
+- Pellegrino, Salvador - Legajo: 75978 - Rol: Backend / API
+- Castrillo, Lautaro - Legajo: 70558 - Rol: Procesamiento de señales
+- Maiolo, Ivan - Legajo: 76593 - Rol: Testing / Documentación
+
+
 ## Requisitos previos
 
 - Python 3.12 o superior
@@ -43,7 +50,9 @@ uv run uvicorn app.main:app --reload
 python -m app.main
 ```
 
-La API estara disponible en `http://localhost:8000`. Documentacion interactiva en:
+La API estara disponible en `http://localhost:8000`. 
+
+Documentacion interactiva en:
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
 
@@ -88,8 +97,8 @@ rir-api/
 - [x] Clonar el fork y verificar que el entorno se instala correctamente.
 - [x] Ejecutar la API: `uvicorn app.main:app --reload`.
 - [x] Verificar que `/health` responde correctamente.
-- [ ] Ejecutar los tests (todos deben fallar con `NotImplementedError` excepto los de API).
-- [ ] Verificar que el CI funciona en GitHub Actions.
+- [x] Ejecutar los tests (todos deben fallar con `NotImplementedError` excepto los de API).
+- [x] Verificar que el CI funciona en GitHub Actions.
 
 ### M1 — Generacion de senales
 **Fecha:** Semana 8
@@ -118,6 +127,57 @@ rir-api/
 - [ ] Crear routers y schemas para exponer toda la funcionalidad como API REST.
 - [ ] Todos los tests de `test_analisis.py` y `test_api.py` deben pasar.
 - [ ] (Opcional) Implementar `metodo_lundeby()`.
+
+
+### Estrategia de ramas
+
+**Main** -> rama protegida
+
+#Ramas de desarrollo de los git-issues divididas por cada Milestone:
+
+# ==============================================================
+# GUÍA RÁPIDA DE RAMAS PARA NUESTRO PROYECTO RIR-API 
+# ==============================================================
+
+
+# --- M1: Generación ---
+
+**feature/sine-sweep**                                  # Issue #1
+**feature/ruido-rosa**                                  # Issue #2
+**feature/test-distribucion**                           # Issue #3
+
+# --- M2: Procesamiento ---
+
+**feature/filtro-butterworth**                          # Issue #4
+**docs/rango-fc**                                       # Issue #5 
+**docs/test-senales-conocidas**                         # Issue #6 
+**feature/cargar-audio**                                # Issue #7
+**feature/sintesis-rir**                                # Issue #8
+**feature/deconvolucion**                               # Issue #9
+**feature/escala-logaritmica**                          # Issue #10
+
+# --- M3: Producto Final ---
+
+**feature/suavizado-media-movil**                       # Issue #11
+**feature/integral-schroeder**                          # Issue #12
+**feature/regresion-lineal**                            # Issue #13
+**feature/parametros-iso3382**                          # Issue #14
+**feature/lundeby-RI**                                  # Issue #15
+
+# --------------------------------------------------------------
+# GUARDAR Y SUBIR MODIFICACIONES
+# --------------------------------------------------------------
+
+git add .
+git commit -m "...(#Nro de issue)"
+git push 
+
+
+### Convencion de commits
+- **feat**: nueva funcionalidad
+- **fix**: corrección de errores
+- **test**: pruebas
+- **txt**: documentación
 
 ## Como correr los tests
 
