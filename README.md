@@ -135,42 +135,41 @@ rir-api/
 
 #Ramas de desarrollo de los git-issues divididas por cada Milestone:
 
-# ==============================================================
-# GUÍA RÁPIDA DE RAMAS PARA NUESTRO PROYECTO RIR-API 
-# ==============================================================
+
+# GUÍA RÁPIDA DE RAMAS PARA NUESTRO PROYECTO RIR-API
 
 
-# --- M1: Generación ---
+# M1: Generación 
 
-**feature/sine-sweep**                                  # Issue #1
-**feature/ruido-rosa**                                  # Issue #2
-**feature/test-distribucion**                           # Issue #3
+- **feature/sine-sweep** # Issue #1
+- **feature/ruido-rosa** # Issue #2
+- **feature/test-distribucion** # Issue #3
 
-# --- M2: Procesamiento ---
+# M2: Procesamiento 
 
-**feature/filtro-butterworth**                          # Issue #4
-**docs/rango-fc**                                       # Issue #5 
-**docs/test-senales-conocidas**                         # Issue #6 
-**feature/cargar-audio**                                # Issue #7
-**feature/sintesis-rir**                                # Issue #8
-**feature/deconvolucion**                               # Issue #9
-**feature/escala-logaritmica**                          # Issue #10
+- **feature/filtro-butterworth** # Issue #4
+- **docs/rango-fc** # Issue #5
+- **docs/test-senales-conocidas** # Issue #6
+- **feature/cargar-audio** # Issue #7
+- **feature/sintesis-rir** # Issue #8
+- **feature/deconvolucion** # Issue #9
+- **feature/escala-logaritmica** # Issue #10
 
-# --- M3: Producto Final ---
+# M3: Producto Final 
 
-**feature/suavizado-media-movil**                       # Issue #11
-**feature/integral-schroeder**                          # Issue #12
-**feature/regresion-lineal**                            # Issue #13
-**feature/parametros-iso3382**                          # Issue #14
-**feature/lundeby-RI**                                  # Issue #15
+- **feature/suavizado-media-movil** # Issue #11
+- **feature/integral-schroeder** # Issue #12
+- **feature/regresion-lineal** # Issue #13
+- **feature/parametros-iso3382** # Issue #14
+- **feature/lundeby-RI** # Issue #15
 
-# --------------------------------------------------------------
+
 # GUARDAR Y SUBIR MODIFICACIONES
-# --------------------------------------------------------------
 
+```bash
 git add .
 git commit -m "...(#Nro de issue)"
-git push 
+git push
 
 
 ### Convencion de commits
