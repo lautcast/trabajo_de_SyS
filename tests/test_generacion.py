@@ -47,3 +47,5 @@ class TestGenerarSineSweep:
         expected_length = int(duracion * fs)
         assert len(sweep) == expected_length
         assert len(filtro_inv) == expected_length
+
+#prueba
