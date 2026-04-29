@@ -35,3 +35,5 @@ def generar_ruido_rosa(duracion: float, fs: int) -> np.ndarray:
         Senal de ruido rosa normalizada, de longitud ``int(duracion * fs)``.
     """
     raise NotImplementedError("Implementar en Milestone 1")
+
+#prueba
