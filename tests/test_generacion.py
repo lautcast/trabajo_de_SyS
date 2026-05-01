@@ -26,8 +26,6 @@ class TestGenerarRuidoRosa:
         """Verifica que la senal esta normalizada entre -1 y 1."""
         ruido = generar_ruido_rosa(1.0, 44100)
         assert np.max(np.abs(ruido)) <= 1.0
-
-
 class TestGenerarSineSweep:
     """Tests para la funcion generar_sine_sweep."""
 
