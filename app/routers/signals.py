@@ -10,9 +10,12 @@ from fastapi.responses import StreamingResponse
 from scipy.io import wavfile
 
 from app.services.pink_noise import generar_ruido_rosa
+from app.services.sine_sweep import generar_sine_sweep
 
 
 router = APIRouter()
+
+# router.get para la funcion generar_ruido_rosa.
 
 @router.get("/pink-noise", summary="Generar y descargar Ruido Rosa")
 def get_pink_noise(
@@ -43,4 +46,46 @@ def get_pink_noise(
         buffer, 
         media_type="audio/wav",
         headers={"Content-Disposition": f"attachment; filename=ruido_rosa_{duracion}s.wav"}
+    )
+
+
+# router.get para la funcion generar_sine_sweep.
+
+
+@router.get("/sine-sweep", summary="Generar y descargar Sine Sweep Logarítmico")
+def get_sine_sweep(
+    f1: float = Query(20.0, gt=0, description="Frecuencia inicial en Hz."),
+    f2: float = Query(20000.0, gt=0, description="Frecuencia final en Hz."),
+    duracion: float = Query(2.0, gt=0, le=30.0, description="Duración en segundos."),
+    fs: int = Query(48000, gt=0, description="Frecuencia de muestreo en Hz.")
+):
+    
+    # La funcion get_sine_sweep genera un sine sweep logarítmico y lo devuelve como archivo .wav descargable.
+    
+    # Generamos la señal usando la función (descartamos el filtro inverso para la descarga)
+
+    sine_sweep, filto_inv = generar_sine_sweep(f1=f1, f2=f2, duracion=duracion, fs=fs)
+
+    # Convertimos los datos del arreglo a PCM 16-bit.
+    # Multiplicamos por 32767 para normalizar el float [-1, 1] al rango de int16
+    
+    audio_int16 = (sine_sweep * 32767).astype(np.int16)
+
+    # Creamos un buffer de memoria
+
+    buffer = io.BytesIO()
+
+    # Escribimos el audio en el buffer en formato WAV
+    
+    wavfile.write(buffer, fs, audio_int16)
+
+    # Volvemos al inicio del buffer
+    
+    buffer.seek(0)
+
+    # Devolvemos el flujo de datos
+
+    filename = f"sine_sweep-{int(f1)}_Hz_a_{int(f2)}_Hz-{duracion}_seg.wav"
+    
+    return StreamingResponse(buffer, media_type="audio/wav", headers={"Content-Disposition": f"attachment; filename={filename}"})
     )
