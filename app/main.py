@@ -8,7 +8,7 @@ Uso:
 
 from fastapi import FastAPI
 
-from app.routers import health
+from app.routers import health, signals
 
 app = FastAPI(
     title="RIR-API",
@@ -20,7 +20,7 @@ app = FastAPI(
 app.include_router(health.router)
 
 # TODO (M3): Agregar routers de signals, filters, acoustics, analysis, utils
-# app.include_router(signals.router, prefix="/api/v1/signals", tags=["signals"])
+app.include_router(signals.router, prefix="/api/v1/signals", tags=["signals"])
 # app.include_router(filters.router, prefix="/api/v1/filters", tags=["filters"])
 # app.include_router(acoustics.router, prefix="/api/v1/acoustics", tags=["acoustics"])
 # app.include_router(analysis.router, prefix="/api/v1/analysis", tags=["analysis"])
