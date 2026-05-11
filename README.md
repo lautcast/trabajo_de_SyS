@@ -59,56 +59,33 @@ Documentacion interactiva en:
 ## Estructura del proyecto
 
 ```mermaid
-graph LR
-    %% --- CONFIGURACIÓN DE ESTILOS ---
-    classDef cliente fill:#e1bee7,stroke:#8e24aa,stroke-width:2px,color:#000,rx:10px,ry:10px;
-    classDef endpoint fill:#bbdefb,stroke:#1976d2,stroke-width:2px,color:#000;
-    classDef schema fill:#b2ebf2,stroke:#0097a6,stroke-width:2px,color:#000,stroke-dasharray: 3 3;
-    classDef servicio fill:#c8e6c9,stroke:#388e3c,stroke-width:2px,color:#000;
-    classDef lib fill:#f5f5f5,stroke:#9e9e9e,stroke-width:1px,color:#424242;
-
-    %% --- NODOS EXTERNOS ---
-    Input([🎧 Input<br>Petición HTTP / Audio]):::cliente
-    Output([📊 Output<br>Audio .wav / JSON]):::cliente
-
-    %% --- CAPA 1: INTERFAZ ---
-    subgraph Capa API [1. Capa de Interfaz y Validación]
-        Router[🔀 Routers FastAPI]:::endpoint
-        Sch[📋 Schemas Pydantic]:::schema
-    end
-
-    %% --- CAPA 2: SERVICIOS ---
-    subgraph Capa Logica [2. Lógica de Negocio / Services]
-        direction TB
-        M1[🎵 M1: Generación de Señales]:::servicio
-        M2[🛠️ M2: Procesamiento de RI]:::servicio
-        M3[📈 M3: Análisis Acústico]:::servicio
-    end
-
-    %% --- CAPA 3: DEPENDENCIAS ---
-    subgraph Dependencias [Dependencias Core]
-        Libs[NumPy, SciPy, Soundfile]:::lib
-    end
-
-    %% --- FLUJO DE DATOS ---
-    Input -- "1. Request" --> Router
-    Router -- "2. Valida datos" --> Sch
-    Sch -. "3. Datos OK" .-> Router
+sequenceDiagram
+    autonumber
     
-    Router -- "4. Ejecuta" --> M1
-    Router -- "4. Ejecuta" --> M2
-    Router -- "4. Ejecuta" --> M3
-
-    M1 -. "5. Retorna NumPy" .-> Router
-    M2 -. "5. Retorna NumPy" .-> Router
-    M3 -. "5. Retorna Dict" .-> Router
-
-    Router -- "6. Response" --> Output
-
-    %% --- RELACIONES CON LIBRERÍAS ---
-    M1 -.- Libs
-    M2 -.- Libs
-    M3 -.- Libs
+    actor C as 🎧 Cliente HTTP
+    participant R as 🔀 Routers (FastAPI)
+    participant P as 📋 Schemas (Pydantic)
+    participant S as ⚙️ Services (M1, M2, M3)
+    
+    Note over C, S: Inicio del ciclo de vida de la petición
+    
+    C->>R: Envía Petición HTTP (Audio / JSON)
+    activate R
+    
+    R->>P: Delega validación de los datos entrantes
+    activate P
+    P-->>R: Confirma que los datos son válidos
+    deactivate P
+    
+    R->>S: Ejecuta la función de negocio correspondiente
+    activate S
+    Note right of S: M1: Generación<br/>M2: Procesamiento<br/>M3: Análisis Acústico
+    S-->>R: Retorna resultados en crudo (NumPy / Dict)
+    deactivate S
+    
+    R->>R: Formatea la respuesta (WAV / JSON)
+    R-->>C: Devuelve la Respuesta HTTP final
+    deactivate R
 ```
 
 ## Milestones
