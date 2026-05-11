@@ -59,49 +59,56 @@ Documentacion interactiva en:
 ## Estructura del proyecto
 
 ```mermaid
-graph TD
-    %% Inputs y Outputs Externos
-    Input([Input: Request HTTP<br>Archivo de Audio / Parámetros JSON])
-    Output([Output: Response HTTP<br>Parámetros ISO 3382 / Audio .wav])
+graph LR
+    %% --- CONFIGURACIÓN DE ESTILOS ---
+    classDef cliente fill:#e1bee7,stroke:#8e24aa,stroke-width:2px,color:#000,rx:10px,ry:10px;
+    classDef endpoint fill:#bbdefb,stroke:#1976d2,stroke-width:2px,color:#000;
+    classDef schema fill:#b2ebf2,stroke:#0097a6,stroke-width:2px,color:#000,stroke-dasharray: 3 3;
+    classDef servicio fill:#c8e6c9,stroke:#388e3c,stroke-width:2px,color:#000;
+    classDef lib fill:#f5f5f5,stroke:#9e9e9e,stroke-width:1px,color:#424242;
 
-    %% Capas Principales
-    subgraph Capa_Interfaz [1. Interfaz y Validación]
-        R[Routers / Endpoints<br>Gestión de rutas]
-        Sch[Schemas Pydantic<br>Validación de datos]
+    %% --- NODOS EXTERNOS ---
+    Input([🎧 Input<br>Petición HTTP / Audio]):::cliente
+    Output([📊 Output<br>Audio .wav / JSON]):::cliente
+
+    %% --- CAPA 1: INTERFAZ ---
+    subgraph Capa API [1. Capa de Interfaz y Validación]
+        Router[🔀 Routers FastAPI]:::endpoint
+        Sch[📋 Schemas Pydantic]:::schema
     end
 
-    subgraph Capa_Logica [2. Services: Lógica de Negocio]
-        M1[M1: Generación de Señales<br>Ruido Rosa, Sine Sweeps]
-        M2[M2: Procesamiento de RI<br>Filtrado, Recorte, Suavizado]
-        M3[M3: Análisis Acústico<br>Cálculo RT60, EDT, Claridad]
+    %% --- CAPA 2: SERVICIOS ---
+    subgraph Capa Logica [2. Lógica de Negocio / Services]
+        direction TB
+        M1[🎵 M1: Generación de Señales]:::servicio
+        M2[🛠️ M2: Procesamiento de RI]:::servicio
+        M3[📈 M3: Análisis Acústico]:::servicio
     end
 
-    subgraph Dependencias [Dependencias Externas Principales]
-        FA(FastAPI)
-        PD(Pydantic)
-        NP(NumPy)
-        SP(SciPy)
+    %% --- CAPA 3: DEPENDENCIAS ---
+    subgraph Dependencias [Dependencias Core]
+        Libs[NumPy, SciPy, Soundfile]:::lib
     end
 
-    %% Flujo de Datos Principal
-    Input -->|1. Petición entrante| R
-    R -->|2. Valida payload| Sch
-    Sch -->|3. Datos validados| R
-    R -->|4. Delega ejecución| M1
-    R -->|4. Delega ejecución| M2
-    R -->|4. Delega ejecución| M3
+    %% --- FLUJO DE DATOS ---
+    Input -- "1. Request" --> Router
+    Router -- "2. Valida datos" --> Sch
+    Sch -. "3. Datos OK" .-> Router
     
-    M1 -->|5. Retorna numpy array| R
-    M2 -->|5. Retorna numpy array| R
-    M3 -->|5. Retorna JSON/Dict| R
-    
-    R -->|6. Formatea salida| Output
+    Router -- "4. Ejecuta" --> M1
+    Router -- "4. Ejecuta" --> M2
+    Router -- "4. Ejecuta" --> M3
 
-    %% Relaciones con Dependencias
-    R -.- FA
-    Sch -.- PD
-    Capa_Logica -.- NP
-    Capa_Logica -.- SP
+    M1 -. "5. Retorna NumPy" .-> Router
+    M2 -. "5. Retorna NumPy" .-> Router
+    M3 -. "5. Retorna Dict" .-> Router
+
+    Router -- "6. Response" --> Output
+
+    %% --- RELACIONES CON LIBRERÍAS ---
+    M1 -.- Libs
+    M2 -.- Libs
+    M3 -.- Libs
 ```
 
 ## Milestones
