@@ -58,34 +58,50 @@ Documentacion interactiva en:
 
 ## Estructura del proyecto
 
-```
-rir-api/
-├── app/
-│   ├── __init__.py
-│   ├── main.py                    # Punto de entrada FastAPI
-│   ├── routers/
-│   │   ├── health.py              # GET /health
-│   │   ├── signals.py             # Endpoints de generacion (M1 → M3)
-│   │   ├── filters.py             # Endpoints de filtrado (M2 → M3)
-│   │   ├── acoustics.py           # Endpoints de analisis (M3)
-│   │   └── utils.py               # Endpoints de utilidades (M3)
-│   ├── schemas/
-│   │   └── ...                    # Modelos Pydantic de request/response
-│   └── services/
-│       ├── pink_noise.py          # Generacion de ruido rosa (M1)
-│       ├── sine_sweep.py          # Generacion de sine sweep (M1)
-│       ├── signal_utils.py        # Utilidades de procesamiento (M2)
-│       ├── filter.py              # Filtros de banda de octava (M2)
-│       └── acoustic_parameters.py # Parametros acusticos ISO 3382 (M3)
-├── tests/
-│   ├── test_generacion.py         # Tests de generacion (M1)
-│   ├── test_procesamiento.py      # Tests de procesamiento (M2)
-│   ├── test_analisis.py           # Tests de analisis (M3)
-│   └── test_api.py                # Tests de endpoints (M3)
-├── docs/                          # Documentacion
-├── .github/workflows/ci.yml       # Integracion continua
-├── pyproject.toml                 # Configuracion del proyecto
-└── README.md
+```mermaid
+graph TD
+    %% Inputs y Outputs Externos
+    Input([Input: Request HTTP<br>Archivo de Audio / Parámetros JSON])
+    Output([Output: Response HTTP<br>Parámetros ISO 3382 / Audio .wav])
+
+    %% Capas Principales
+    subgraph Capa_Interfaz [1. Interfaz y Validación]
+        R[Routers / Endpoints<br>Gestión de rutas]
+        Sch[Schemas Pydantic<br>Validación de datos]
+    end
+
+    subgraph Capa_Logica [2. Services: Lógica de Negocio]
+        M1[M1: Generación de Señales<br>Ruido Rosa, Sine Sweeps]
+        M2[M2: Procesamiento de RI<br>Filtrado, Recorte, Suavizado]
+        M3[M3: Análisis Acústico<br>Cálculo RT60, EDT, Claridad]
+    end
+
+    subgraph Dependencias [Dependencias Externas Principales]
+        FA(FastAPI)
+        PD(Pydantic)
+        NP(NumPy)
+        SP(SciPy)
+    end
+
+    %% Flujo de Datos Principal
+    Input -->|1. Petición entrante| R
+    R -->|2. Valida payload| Sch
+    Sch -->|3. Datos validados| R
+    R -->|4. Delega ejecución| M1
+    R -->|4. Delega ejecución| M2
+    R -->|4. Delega ejecución| M3
+    
+    M1 -->|5. Retorna numpy array| R
+    M2 -->|5. Retorna numpy array| R
+    M3 -->|5. Retorna JSON/Dict| R
+    
+    R -->|6. Formatea salida| Output
+
+    %% Relaciones con Dependencias
+    R -.- FA
+    Sch -.- PD
+    Capa_Logica -.- NP
+    Capa_Logica -.- SP
 ```
 
 ## Milestones
@@ -103,8 +119,8 @@ rir-api/
 ### M1 — Generacion de senales
 **Fecha:** Semana 8
 
-- [ ] Implementar `generar_ruido_rosa()` en `app/services/pink_noise.py`.
-- [ ] Implementar `generar_sine_sweep()` en `app/services/sine_sweep.py`.
+- [x] Implementar `generar_ruido_rosa()` en `app/services/pink_noise.py`.
+- [x] Implementar `generar_sine_sweep()` en `app/services/sine_sweep.py`.
 - [ ] Implementar `reproducir_y_grabar()`.
 - [ ] Todos los tests de `test_generacion.py` deben pasar.
 
