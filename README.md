@@ -58,34 +58,34 @@ Documentacion interactiva en:
 
 ## Estructura del proyecto
 
-```
-rir-api/
-├── app/
-│   ├── __init__.py
-│   ├── main.py                    # Punto de entrada FastAPI
-│   ├── routers/
-│   │   ├── health.py              # GET /health
-│   │   ├── signals.py             # Endpoints de generacion (M1 → M3)
-│   │   ├── filters.py             # Endpoints de filtrado (M2 → M3)
-│   │   ├── acoustics.py           # Endpoints de analisis (M3)
-│   │   └── utils.py               # Endpoints de utilidades (M3)
-│   ├── schemas/
-│   │   └── ...                    # Modelos Pydantic de request/response
-│   └── services/
-│       ├── pink_noise.py          # Generacion de ruido rosa (M1)
-│       ├── sine_sweep.py          # Generacion de sine sweep (M1)
-│       ├── signal_utils.py        # Utilidades de procesamiento (M2)
-│       ├── filter.py              # Filtros de banda de octava (M2)
-│       └── acoustic_parameters.py # Parametros acusticos ISO 3382 (M3)
-├── tests/
-│   ├── test_generacion.py         # Tests de generacion (M1)
-│   ├── test_procesamiento.py      # Tests de procesamiento (M2)
-│   ├── test_analisis.py           # Tests de analisis (M3)
-│   └── test_api.py                # Tests de endpoints (M3)
-├── docs/                          # Documentacion
-├── .github/workflows/ci.yml       # Integracion continua
-├── pyproject.toml                 # Configuracion del proyecto
-└── README.md
+```mermaid
+sequenceDiagram
+    autonumber
+    
+    actor C as 🎧 Cliente HTTP
+    participant R as 🔀 Routers (FastAPI)
+    participant P as 📋 Schemas (Pydantic)
+    participant S as ⚙️ Services (M1, M2, M3)
+    
+    Note over C, S: Inicio del ciclo de vida de la petición
+    
+    C->>R: Envía Petición HTTP (Audio / JSON)
+    activate R
+    
+    R->>P: Delega validación de los datos entrantes
+    activate P
+    P-->>R: Confirma que los datos son válidos
+    deactivate P
+    
+    R->>S: Ejecuta la función de negocio correspondiente
+    activate S
+    Note right of S: M1: Generación<br/>M2: Procesamiento<br/>M3: Análisis Acústico
+    S-->>R: Retorna resultados en crudo (NumPy / Dict)
+    deactivate S
+    
+    R->>R: Formatea la respuesta (WAV / JSON)
+    R-->>C: Devuelve la Respuesta HTTP final
+    deactivate R
 ```
 
 ## Milestones
@@ -103,8 +103,8 @@ rir-api/
 ### M1 — Generacion de senales
 **Fecha:** Semana 8
 
-- [ ] Implementar `generar_ruido_rosa()` en `app/services/pink_noise.py`.
-- [ ] Implementar `generar_sine_sweep()` en `app/services/sine_sweep.py`.
+- [x] Implementar `generar_ruido_rosa()` en `app/services/pink_noise.py`.
+- [x] Implementar `generar_sine_sweep()` en `app/services/sine_sweep.py`.
 - [ ] Implementar `reproducir_y_grabar()`.
 - [ ] Todos los tests de `test_generacion.py` deben pasar.
 
