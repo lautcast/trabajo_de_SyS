@@ -88,4 +88,4 @@ def get_sine_sweep(
     filename = f"sine_sweep-{int(f1)}_Hz_a_{int(f2)}_Hz-{duracion}_seg.wav"
     
     return StreamingResponse(buffer, media_type="audio/wav", headers={"Content-Disposition": f"attachment; filename={filename}"})
-    )
+    
