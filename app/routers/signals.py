@@ -25,28 +25,31 @@ def get_pink_noise(
     """
     Genera ruido rosa y lo devuelve como un archivo de audio .wav descargable.
     """
-    # 1. Generar la señal usando tu función existente
+
+    # Generamos la señal usando la función de generar_ruido_rosa, importada desde la carpeta services
+    
     ruido = generar_ruido_rosa(duracion, fs)
 
-    # 2. Convertir de float64 [-1, 1] a PCM 16-bit (estándar para archivos WAV)
+    # Convertimos de float64 [-1, 1] a PCM 16-bit (estándar para archivos WAV)
     # Esto es necesario para que el reproductor de audio entienda la amplitud.
+
     audio_int16 = (ruido * 32767).astype(np.int16)
 
-    # 3. Crear un buffer de memoria (archivo virtual)
+    # Crear un buffer de memoria (archivo virtual)
+    
     buffer = io.BytesIO()
     
-    # 4. Escribir el audio en el buffer en formato WAV
+    # Escribimos el audio del buffer en formato WAV
+    
     wavfile.write(buffer, fs, audio_int16)
     
-    # 5. Volver al inicio del buffer para que FastAPI pueda leerlo desde el principio
+    # Volvemos al inicio del buffer para que FastAPI pueda leerlo desde el principio
+    
     buffer.seek(0)
 
-    # 6. Devolver el flujo de datos con el tipo de medio correcto
-    return StreamingResponse(
-        buffer, 
-        media_type="audio/wav",
-        headers={"Content-Disposition": f"attachment; filename=ruido_rosa_{duracion}s.wav"}
-    )
+    # Devolver el flujo de datos con el tipo de medio correcto
+    
+    return StreamingResponse(buffer, media_type="audio/wav",headers={"Content-Disposition": f"attachment; filename=ruido_rosa_{duracion}s.wav"})
 
 
 # router.get para la funcion generar_sine_sweep.
@@ -60,8 +63,11 @@ def get_sine_sweep(
     fs: int = Query(48000, gt=0, description="Frecuencia de muestreo en Hz.")
 ):
     
-    # La funcion get_sine_sweep genera un sine sweep logarítmico y lo devuelve como archivo .wav descargable.
+    """
+     Genera un sine sweep logarítmico y lo devuelve como archivo .wav descargable.
     
+    """
+
     # Generamos la señal usando la función (descartamos el filtro inverso para la descarga)
 
     sine_sweep, filto_inv = generar_sine_sweep(f1=f1, f2=f2, duracion=duracion, fs=fs)
