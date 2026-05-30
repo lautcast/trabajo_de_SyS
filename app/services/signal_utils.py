@@ -6,6 +6,7 @@ Milestone 2: Procesamiento de la respuesta al impulso.
 import numpy as np
 import soundfile as sf
 from pathlib import Path
+from scipy import signal
 
 def cargar_audio(ruta: str) -> tuple[np.ndarray, int]:
     """Carga un archivo de audio y retorna la senal y la frecuencia de muestreo.
@@ -77,23 +78,48 @@ def sintetizar_ri(
     raise NotImplementedError("Implementar en Milestone 2")
 
 
-def obtener_ri_desde_sweep(
-    grabacion: np.ndarray, filtro_inverso: np.ndarray
-) -> np.ndarray:
-    """Obtiene la respuesta al impulso mediante deconvolucion de un sine sweep.
+def obtener_ri_desde_sweep(grabacion: np.ndarray, filtro_inverso: np.ndarray) -> np.ndarray:
+    """
+    Acciones
+    ----------
+    La funcion obtener_ri_desde_sweep obtiene la respuesta al impulso mediante deconvolucion de un sine sweep.
 
     Parameters
     ----------
-    grabacion : np.ndarray
-        Senal grabada que contiene la respuesta de la sala al sweep.
-    filtro_inverso : np.ndarray
-        Filtro inverso del sweep utilizado.
+    grabacion: np.ndarray --> Senal grabada que contiene la respuesta de la sala al sweep.
+    
+    filtro_inverso: np.ndarray --> Filtro inverso del sweep utilizado.
 
     Returns
     -------
     np.ndarray
         Respuesta al impulso estimada, normalizada.
     """
+
+    # Realizamos la convolución entre el filtro inverso del sine sweep y la grabacion del sine sweep en el recinto.
+
+    impulso = signal.fftconvolve(grabacion, filtro_inverso, mode='full')
+    
+    # Buscamos el índice donde ocurre el valor máximo absoluto.
+
+    imp_max = np.argmax(np.abs(impulso))
+    
+    # Comenzamos en el pico, o ligeramente antes.
+
+    inicio = max(0, imp_max - 15)
+    h_recortada = impulso[inicio:]
+    
+    # 4. Post-procesamiento: Normalizar respecto al pico
+    # Dividimos todo el array por el valor máximo absoluto para que quede entre -1 y 1
+    pico_maximo = np.max(np.abs(h_recortada))
+    
+    # Prevenir división por cero en caso de que la señal sea nula
+    if pico_maximo > 0:
+        h_norm = h_recortada / pico_maximo
+    else:
+        h_norm = h_recortada
+
+
     raise NotImplementedError("Implementar en Milestone 2")
 
 
