@@ -92,24 +92,22 @@ def obtener_ri_desde_sweep(grabacion: np.ndarray, filtro_inverso: np.ndarray) ->
 
     Returns
     -------
-    np.ndarray
-        Respuesta al impulso estimada, normalizada.
+    np.ndarray -- > Respuesta al impulso estimada, normalizada.
     """
 
     # Realizamos la convolución entre el filtro inverso del sine sweep y la grabacion del sine sweep en el recinto.
 
-    impulso = signal.fftconvolve(grabacion, filtro_inverso, mode='full')
+    ri = signal.fftconvolve(grabacion, filtro_inverso, mode='full')
     
     # Buscamos el índice donde ocurre el valor máximo absoluto.
 
-    imp_max = np.argmax(np.abs(impulso))
+    indice_max = np.argmax(np.abs(ri))
     
     # Comenzamos en el pico, o ligeramente antes.
 
-    inicio = max(0, imp_max - 15)
-    h_recortada = impulso[inicio:]
+    inicio = max(0, indice_max - 15)
+    h_recortada = ri[inicio:]
     
-    # 4. Post-procesamiento: Normalizar respecto al pico
     # Dividimos todo el array por el valor máximo absoluto para que quede entre -1 y 1
     pico_maximo = np.max(np.abs(h_recortada))
     
