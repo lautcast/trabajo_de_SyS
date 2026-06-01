@@ -27,7 +27,7 @@ def get_pink_noise(
     """
 
     # Generamos la señal usando la función de generar_ruido_rosa, importada desde la carpeta services
-    
+
     ruido = generar_ruido_rosa(duracion, fs)
 
     # Convertimos de float64 [-1, 1] a PCM 16-bit (estándar para archivos WAV)
@@ -36,19 +36,19 @@ def get_pink_noise(
     audio_int16 = (ruido * 32767).astype(np.int16)
 
     # Crear un buffer de memoria (archivo virtual)
-    
+
     buffer = io.BytesIO()
-    
+
     # Escribimos el audio del buffer en formato WAV
-    
+
     wavfile.write(buffer, fs, audio_int16)
-    
+
     # Volvemos al inicio del buffer para que FastAPI pueda leerlo desde el principio
-    
+
     buffer.seek(0)
 
     # Devolver el flujo de datos con el tipo de medio correcto
-    
+
     return StreamingResponse(buffer, media_type="audio/wav",headers={"Content-Disposition": f"attachment; filename=ruido_rosa_{duracion}s.wav"})
 
 
@@ -62,10 +62,10 @@ def get_sine_sweep(
     duracion: float = Query(2.0, gt=0, le=30.0, description="Duración en segundos."),
     fs: int = Query(48000, gt=0, description="Frecuencia de muestreo en Hz.")
 ):
-    
+
     """
      Genera un sine sweep logarítmico y lo devuelve como archivo .wav descargable.
-    
+
     """
 
     # Generamos la señal usando la función (descartamos el filtro inverso para la descarga)
@@ -74,7 +74,7 @@ def get_sine_sweep(
 
     # Convertimos los datos del arreglo a PCM 16-bit.
     # Multiplicamos por 32767 para normalizar el float [-1, 1] al rango de int16
-    
+
     audio_int16 = (sine_sweep * 32767).astype(np.int16)
 
     # Creamos un buffer de memoria
@@ -82,16 +82,16 @@ def get_sine_sweep(
     buffer = io.BytesIO()
 
     # Escribimos el audio en el buffer en formato WAV
-    
+
     wavfile.write(buffer, fs, audio_int16)
 
     # Volvemos al inicio del buffer
-    
+
     buffer.seek(0)
 
     # Devolvemos el flujo de datos
 
     filename = f"sine_sweep-{int(f1)}_Hz_a_{int(f2)}_Hz-{duracion}_seg.wav"
-    
+
     return StreamingResponse(buffer, media_type="audio/wav", headers={"Content-Disposition": f"attachment; filename={filename}"})
-    
+
