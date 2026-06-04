@@ -35,13 +35,11 @@ def filtro_octava(signal: np.ndarray, fc: float, fs: int, orden: int = 4) -> np.
 
     frec_cent_normalizadas = np.array[31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
 
-    if fc not in frec_cent_normalizadas:
-        raise(ValueError("Por favor, ingresar una frecuencia central normalizada según IEC 61620."))
-
     # Calculamos cada una de las frecuencias de corte por cada frecuencia central normalizada.
+    # Guardamos en un array a cada frecuencia de corte inferior y superior.
 
-    f_inf = fc/(np.sqrt(2))
-    f_sup = fc*(np.sqrt(2))
+    f_inf = frec_cent_normalizadas/(np.sqrt(2))
+    f_sup = frec_cent_normalizadas*(np.sqrt(2))
 
     # Calculamos la frecuencia de Nyquist
 
@@ -52,10 +50,21 @@ def filtro_octava(signal: np.ndarray, fc: float, fs: int, orden: int = 4) -> np.
     w_inf = f_inf/f_nyquist
     w_sup = f_sup/f_nyquist
 
+    #
+
+    diccionario = {}
+
     # Calculamos los parámetros del filtro butterworth
 
-    b, a = signal.butter(orden, [w_inf, w_sup], btype='band')
+    for (inferior, superior), f in zip(w_inf, w_sup), frec_cent_normalizadas:
 
-    signal_filtrada = signal.filtfilt(b, a, signal)
+        b, a = signal.butter(orden, [w_inf, w_sup], btype='band')
 
-    return signal_filtrada
+        signal_filtrada = signal.filtfilt(b, a, signal)
+
+        diccionario[f in frec_cent_normalizadas].append(signal_filtrada)
+
+    print(diccionario[0])
+
+    return diccionario
+
