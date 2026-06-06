@@ -38,8 +38,7 @@ def filtro_octava(signal: np.ndarray, fc: float, fs: int, orden: int = 4) -> np.
     if fc not in frec_cent_normalizadas:
         raise ValueError(f"La frecuencia central especificada no se encuentra dentro de la norma IEC 61260")
 
-    # Calculamos cada una de las frecuencias de corte por cada frecuencia central normalizada.
-    # Guardamos en un array a cada frecuencia de corte inferior y superior.
+    # Calculamos las frecuencias de corte inferior y superior para la frecuencia central normalizada.
 
     f_inf = fc/(np.sqrt(2))
     f_sup = fc*(np.sqrt(2))
@@ -48,26 +47,17 @@ def filtro_octava(signal: np.ndarray, fc: float, fs: int, orden: int = 4) -> np.
 
     f_nyquist = fs/2
 
-    # Ahora dividimos cada una de las frecuencias de corte con la frecuencia de sampleo fs, para cumplir con el teorema de Nyquist
+    # Ahora dividimos las frecuencias de corte con la frecuencia de Nyquist
 
     w_inf = f_inf/f_nyquist
     w_sup = f_sup/f_nyquist
 
-    #
-
-    diccionario = {}
-
     # Calculamos los parámetros del filtro butterworth
 
-    for (inferior, superior), f in zip(w_inf, w_sup), frec_cent_normalizadas:
+    b, a = signal.butter(orden, [w_inf, w_sup], btype='band')
 
-        b, a = signal.butter(orden, [w_inf, w_sup], btype='band')
+    signal_filtrada = signal.filtfilt(b, a, signal)
 
-        signal_filtrada = signal.filtfilt(b, a, signal)
+    return signal_filtrada
 
-        diccionario[f in frec_cent_normalizadas].append(signal_filtrada)
-
-    print(diccionario[0])
-
-    return diccionario
 
