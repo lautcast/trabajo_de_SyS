@@ -35,11 +35,14 @@ def filtro_octava(signal: np.ndarray, fc: float, fs: int, orden: int = 4) -> np.
 
     frec_cent_normalizadas = np.array[31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
 
+    if fc not in frec_cent_normalizadas:
+        raise ValueError(f"La frecuencia central especificada no se encuentra dentro de la norma IEC 61260")
+
     # Calculamos cada una de las frecuencias de corte por cada frecuencia central normalizada.
     # Guardamos en un array a cada frecuencia de corte inferior y superior.
 
-    f_inf = frec_cent_normalizadas/(np.sqrt(2))
-    f_sup = frec_cent_normalizadas*(np.sqrt(2))
+    f_inf = fc/(np.sqrt(2))
+    f_sup = fc*(np.sqrt(2))
 
     # Calculamos la frecuencia de Nyquist
 
