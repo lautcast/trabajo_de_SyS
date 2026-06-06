@@ -69,56 +69,57 @@ def cargar_audio(ruta: str) -> tuple[np.ndarray, int]:
 
 from app.services.filter import filtro_octava
 
-def sintetizar_ri(
-    t60_por_banda: dict[float, float], fs: int, duracion: float
-) -> np.ndarray:
+def sintetizar_ri(t60_por_banda: dict[float, float], fs: int, duracion: float) -> np.ndarray:
     """
     Sintetiza una respuesta al impulso con valores de T60 conocidos por banda.
 
     Parameters
     ----------
-    t60_por_banda : dict[float, float]
-        Diccionario {frecuencia_central_Hz: T60_segundos}.
-        Ejemplo: {125: 2.0, 250: 1.8, 500: 1.5, 1000: 1.2, 2000: 1.0, 4000: 0.8}
-    fs : int
-        Frecuencia de muestreo en Hz.
-    duracion : float
-        Duracion total de la RI sintetizada en segundos.
+    t60_por_banda : dict[float, float] --> Diccionario {frecuencia_central_Hz: T60_segundos}. Ejemplo: {125: 2.0, 250: 1.8, 500: 1.5, 1000: 1.2, 2000: 1.0, 4000: 0.8}
+    fs : int --> Frecuencia de muestreo en Hz.
+    duracion : float --> Duracion total de la RI sintetizada en segundos.
 
     Returns
     -------
-    np.ndarray
-        Respuesta al impulso sintetizada y normalizada.
+    np.ndarray --> Respuesta al impulso sintetizada y normalizada.
     """
     # Calculamos la cantidad total de muestras y creamos el vector de tiempo (t)
+
     total_muestras = int(fs * duracion)
     t = np.arange(total_muestras) / fs
     
     # Inicializamos un arreglo vacío de ceros donde iremos sumando cada banda
+
     ri_total = np.zeros(total_muestras)
     
+    # Fabricamos un bucle que 
+
     for freq_central, t60 in t60_por_banda.items():
-        # a. Generar ruido blanco
-        # np.random.randn genera ruido blanco Gaussiano
+
+        # Generamos un ruido blanco con la funcion np.random.randn
+        
         ruido_blanco = np.random.randn(total_muestras)
         
-        # b. Filtrar con filtro pasa-banda centrado en la frecuencia central
+        # Filtramos con filtro pasa-banda centrado en la frecuencia central
+   
         ruido_filtrado = filtro_octava(ruido_blanco, freq_central, fs)
         
-        # c. Aplicar la envolvente exponencial
-        # Matemáticamente, para que la energía caiga 60 dB en t = T60, 
-        # el coeficiente de atenuación alpha de la amplitud es ln(1000) / T60
+        # Aplicar la envolvente exponencial
+        # Matemáticamente, para que la energía caiga 60 dB en t = T60, el coeficiente de atenuación alpha de la amplitud es ln(1000) / T60
+        
         alpha = np.log(1000) / t60
         envolvente = np.exp(-alpha * t)
         
         # Multiplicamos el ruido filtrado por la curva de decaimiento
+
         componente_banda = ruido_filtrado * envolvente
         
-        # d. Sumar todas las componentes filtradas
+        # Sumamos todas las componentes filtradas en el arreglo hecho anteriormente
+
         ri_total += componente_banda
         
-    # e. Normalizar la señal resultante
-    # Buscamos el pico máximo absoluto y dividimos todo por ese valor
+    # Normalizamos la senal resultante, buscando el pico máximo absoluto y dividiendo todo por ese valor
+    
     valor_maximo = np.max(np.abs(ri_total))
     if valor_maximo > 0:
         ri_total = ri_total / valor_maximo
