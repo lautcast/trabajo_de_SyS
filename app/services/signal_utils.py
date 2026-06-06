@@ -32,28 +32,39 @@ def cargar_audio(ruta: str) -> tuple[np.ndarray, int]:
     ValueError
         Si el formato del archivo no es soportado (no es .wav ni .flac).
     """
-    # 1. Convertimos la ruta a un objeto Path para manejarla de forma segura
+    # Convertimos la ruta o direccion del archivo a un objeto Path para manejarlo de forma segura
+    
     ruta_obj = Path(ruta)
     
-    # 2. Verificamos que el archivo realmente exista
+    # Verificamos que el archivo realmente exista. Caso contrario, devolvemos un error.
+
     if not ruta_obj.is_file():
         raise FileNotFoundError(f"El archivo no existe en la ruta especificada: {ruta_obj.absolute()}")
     
-    # 3. Verificamos la extension (aceptamos .wav y .flac ignorando mayúsculas)
+    # Verificamos la extension (aceptamos .wav y .flac ignorando mayúsculas)
+
     extension = ruta_obj.suffix.lower()
+
     if extension not in ['.wav', '.flac']:
         raise ValueError(f"Formato no soportado: '{extension}'. Solo se admiten archivos .wav y .flac.")
     
-    # 4. Leemos el archivo. 
+    # Leemos el archivo. 
     # always_2d=False permite que los archivos mono sean 1D (más fácil de procesar después).
     # dtype='float64' garantiza la normalización automática entre -1 y 1.
+    
     try:
         senal, fs = sf.read(file=str(ruta_obj), dtype='float64', always_2d=False)
     except Exception as e:
-        # Capturamos cualquier error interno de la librería (ej. archivo corrupto)
+
+        # Capturamos cualquier error interno de la librería.
+
         raise ValueError(f"Error al intentar leer el archivo de audio: {e}")
-        
-    return senal, fs
+    
+    # Creamos un diccionario que guarde las variables que debe devolver la funcion.
+
+    diccionario = {senal, fs}
+
+    return diccionario
 
 
 from app.services.filter import filtro_octava
