@@ -174,12 +174,43 @@ def a_escala_log(signal: np.ndarray) -> np.ndarray:
 
     Parameters
     ----------
-    signal : np.ndarray
-        Senal de entrada (array 1D).
+    signal : np.ndarray --> Senal de entrada (array 1D).
 
     Returns
     -------
-    np.ndarray
-        Senal en escala logaritmica (dB), normalizada a 0 dB en el maximo.
+    np.ndarray --> Senal en escala logaritmica (dB), normalizada a 0 dB en el maximo.
     """
-    raise NotImplementedError("Implementar en Milestone 2")
+
+    # Calculamos la amplitud de la senal
+
+    amplitud = np.abs(signal)
+
+    # Calculamos el maximo de amplitud de la senal
+
+    amp_max = np.max(amplitud)
+
+    # Evitamos la division por cero
+
+    if amp_max == 0.0:
+        return np.full_like(signal, -120.00 , dtype=float)
+    else:
+        pass
+
+    # Normalizamos la senal
+
+    signal_normalizada = amplitud/amp_max
+
+    # Evitamos el logaritmo de cero
+
+    epsilon = np.finfo(float).eps
+    signal_final = np.maximum(signal_normalizada, epsilon)
+
+    # Finalmente, pasamos la senal a escala logaritmica
+
+    signal_db = 20 * np.log(signal_final)
+
+    # Definimos el piso de ruido para que no hayan niveles extremadamente negativos
+
+    signal_db = np.maximum(signal_db, -120.00)
+
+    return signal_db
