@@ -155,19 +155,18 @@ def obtener_ri_desde_sweep(grabacion: np.ndarray, filtro_inverso: np.ndarray) ->
     # Comenzamos en el pico, o ligeramente antes.
 
     inicio = max(0, indice_max - 15)
-    h_recortada = ri[inicio:]
+    ri_recortado = ri[inicio:]
     
     # Dividimos todo el array por el valor máximo absoluto para que quede entre -1 y 1
-    pico_maximo = np.max(np.abs(h_recortada))
+    pico_maximo = np.max(np.abs(ri_recortado))
     
     # Prevenir división por cero en caso de que la señal sea nula
     if pico_maximo > 0:
-        h_norm = h_recortada / pico_maximo
+        h_norm = ri_recortado / pico_maximo
     else:
-        h_norm = h_recortada
+        h_norm = ri_recortado
 
-
-    raise NotImplementedError("Implementar en Milestone 2")
+    return h_norm
 
 
 def a_escala_log(signal: np.ndarray) -> np.ndarray:
