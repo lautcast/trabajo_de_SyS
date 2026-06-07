@@ -86,11 +86,12 @@ def sintetizar_ri(t60_por_banda: dict[float, float], fs: int, duracion: float) -
     # Calculamos la cantidad total de muestras y creamos el vector de tiempo (t)
 
     total_muestras = int(fs * duracion)
-    t = np.arange(total_muestras) / fs
+    
+    t = np.linspace(0.0, duracion, total_muestras, endpoint=False, dtype=np.float64)/ fs
     
     # Inicializamos un arreglo vacío de ceros donde iremos sumando cada banda
 
-    ri_total = np.zeros(total_muestras)
+    ri_total = np.zeros(total_muestras, dtype=np.float64)
     
     # Fabricamos un bucle que 
 
@@ -103,6 +104,12 @@ def sintetizar_ri(t60_por_banda: dict[float, float], fs: int, duracion: float) -
         # Filtramos con filtro pasa-banda centrado en la frecuencia central
    
         ruido_filtrado = filtro_octava(ruido_blanco, freq_central, fs)
+
+        # Normalizamos la senal resultante, buscando el pico máximo absoluto y dividiendo todo por ese valor
+
+        valor_maximo = np.max(np.abs(ruido_filtrado))
+        if valor_maximo > 0:
+            ruido_filtrado = ruido_filtrado / valor_maximo
         
         # Aplicar la envolvente exponencial
         # Matemáticamente, para que la energía caiga 60 dB en t = T60, el coeficiente de atenuación alpha de la amplitud es ln(1000) / T60
@@ -117,12 +124,6 @@ def sintetizar_ri(t60_por_banda: dict[float, float], fs: int, duracion: float) -
         # Sumamos todas las componentes filtradas en el arreglo hecho anteriormente
 
         ri_total += componente_banda
-        
-    # Normalizamos la senal resultante, buscando el pico máximo absoluto y dividiendo todo por ese valor
-    
-    valor_maximo = np.max(np.abs(ri_total))
-    if valor_maximo > 0:
-        ri_total = ri_total / valor_maximo
         
     return ri_total
 
