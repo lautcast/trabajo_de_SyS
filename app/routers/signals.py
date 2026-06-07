@@ -99,7 +99,7 @@ def get_sine_sweep(
 # router.get para la funcion sintetizar_ri.
 
 
-@router.get("/siintetizar_ri", summary="Generar y descargar la Respuesta al Impulso de un recinto")
+@router.post("/siintetizar_ri", summary="Generar y descargar la Respuesta al Impulso de un recinto")
 def get_sintetizar_ri(
     t60_por_banda: dict[float, float] = Body({31.5: 2, 63: 2, 125 : 2, 250: 2, 500: 2, 1000: 2, 2000: 2, 4000: 2, 8000: 2, 16000: 2}, gt=0, description="Lista con Claves:Valor tal que: [frecuencia central : T60 de la banda de octava]."),
     fs: int = Query(48000.0, gt=0, description="Frecuencia de muestreo en Hz."),
