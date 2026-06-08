@@ -12,7 +12,7 @@ from app.routers.signals import generar_sine_sweep
 from scipy.signal import fftconvolve
 from app.services.signal_utils import a_escala_log
 from scipy.signal import freqz
-from app.services. import filtro_octava
+from app.services.filter import filtro_octava
 
 class TestCargarAudio:
     """Tests para la funcion cargar_audio."""
@@ -67,6 +67,8 @@ class TestCargarAudio:
 
 class TestAEscalaLog:
     """Tests para la funcion a_escala_log."""
+    def test_a_escala_log_salida_ndarray(self):
+
         """Verifica que retorna un np.ndarray."""
         x = np.array([1.0, 0.5])
         db = a_escala_log(x)
@@ -215,4 +217,4 @@ class Deconvolución:
     assert correlacion > 0.9, f"Fallo: La correlación fue de {correlacion:.3f}, se esperaba > 0.9"
 
     # Extra: verificamos que el pico efectivamente haya quedado normalizado a 1.0 como dice tu código
-    assert np.isclose(np.max(np.abs(ri_recuperada)), 1.0)
+    assert np.isclose(np.max(np.abs(ri_recuperada)), 1.0), "Fallo: El pico máximo de la RI recuperada no está normalizado a 1.0"
