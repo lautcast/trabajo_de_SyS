@@ -204,10 +204,10 @@ def a_escala_log(signal: np.ndarray) -> np.ndarray:
 
     # Finalmente, pasamos la senal a escala logaritmica
 
-    signal_db = 20 * np.log(signal_final)
+    signal_db = 20 * np.log10(signal_final)
 
     # Definimos el piso de ruido para que no hayan niveles extremadamente negativos
 
-    signal_db = np.maximum(signal_db, -120.00)
+    signal_db_piso_de_ruido = np.maximum(signal_db, -120.00)
 
-    return signal_db
+    return signal_db_piso_de_ruido
