@@ -10,7 +10,9 @@ from scipy.signal import butter, filtfilt
 from app.services.signal_utils import sintetizar_ri, obtener_ri_desde_sweep
 from app.routers.signals import generar_sine_sweep
 from scipy.signal import fftconvolve
-
+from app.services.signal_utils import a_escala_log
+from scipy.signal import freqz
+from app.services. import filtro_octava
 
 class TestCargarAudio:
     """Tests para la funcion cargar_audio."""
@@ -22,10 +24,10 @@ class TestCargarAudio:
 
     def test_cargar_audio_wav(self, tmp_path):
         """Verificar carga correcta de archivo WAV."""
-        # 1. Creamos un archivo WAV temporal de prueba
+
         ruta_dummy = tmp_path / "prueba.wav"
         fs_esperada = 44100
-        # Señal de prueba (ruido aleatorio convertido a formato de audio estándar de 16 bits)
+
         senal_dummy = np.random.randint(-32768, 32767, fs_esperada, dtype=np.int16)
         wavfile.write(ruta_dummy, fs_esperada, senal_dummy)
 
@@ -39,49 +41,80 @@ class TestCargarAudio:
 
     def test_cargar_audio_formato_invalido(self, tmp_path):
         """Verificar que lanza error con formato no soportado."""
-        # 1. Creamos un archivo temporal que no es un audio (un txt disfrazado)
+
         ruta_invalida = tmp_path / "falso_audio.txt"
         ruta_invalida.write_text("Esto es texto, no es un archivo de audio.")
 
-        # 2. Verificamos que la función ataje el error al intentar leerlo
-        # (Dependiendo de cómo programen cargar_audio, puede ser ValueError o Exception)
         with pytest.raises(ValueError): 
             cargar_audio(str(ruta_invalida))
 
     def test_cargar_audio_normalizacion(self, tmp_path):
         """Verificar que la salida esta normalizada entre -1 y 1."""
-        # 1. Creamos un WAV temporal forzando picos máximos del formato digital
+
         ruta_dummy = tmp_path / "prueba_norm.wav"
         fs_esperada = 44100
-        # Forzamos los valores límite de 16 bits: 32767 y -32768
+
         senal_extrema = np.array([32767, 0, -32768, 15000], dtype=np.int16)
         wavfile.write(ruta_dummy, fs_esperada, senal_extrema)
 
-        # 2. Ejecutamos la función
         signal, _ = cargar_audio(str(ruta_dummy))
 
-        # 3. Verificamos matemáticamente que el valor absoluto máximo no supere 1.0
         max_amplitud = np.max(np.abs(signal))
         assert max_amplitud <= 1.0
 
-        # Opcional pero recomendado: asegurar que no haya devuelto un arreglo de puros ceros
         assert max_amplitud > 0.0
 
 
 class TestAEscalaLog:
     """Tests para la funcion a_escala_log."""
-
-    def test_a_escala_log_valores(self):
-        """Verifica que el maximo de la senal corresponde a 0 dB."""
-        x = np.array([1.0, 0.5, 0.25, 0.1])
-        db = a_escala_log(x)
-        assert abs(db[0] - 0.0) < 1e-10
-
-    def test_a_escala_log_tipo(self):
         """Verifica que retorna un np.ndarray."""
         x = np.array([1.0, 0.5])
         db = a_escala_log(x)
         assert isinstance(db, np.ndarray)
+
+    def test_a_escala_log_maximo_cero(self):
+        """Verifica que el valor maximo de la salida (Full Scale) es 0 dB."""
+        # Usamos una señal con valores aleatorios positivos y negativos
+        np.random.seed(42) # Fijamos semilla para que el test sea reproducible
+        x = np.random.uniform(-0.8, 0.8, 100) 
+
+        # Le inyectamos un pico máximo artificial conocido
+        x[50] = 1.0 
+
+        db = a_escala_log(x)
+
+        # El máximo absoluto en lineal (1.0) debe corresponder a 0.0 dB
+        assert np.isclose(np.max(db), 0.0, atol=1e-10)
+
+    def test_a_escala_log_relacion(self):
+        """Verifica que una senal con amplitud mitad da aproximadamente -6 dB."""
+        # Comparamos el valor máximo (1.0) con su mitad exacta (0.5)
+        x = np.array([1.0, 0.5])
+        db = a_escala_log(x)
+
+        # En audio (presión/voltaje), 20 * log10(0.5 / 1.0) = -6.02059... dB
+        # Usamos np.isclose con tolerancia porque -6 es una aproximación teórica
+        assert np.isclose(db[1], -6.0206, atol=1e-4)
+
+    # --- Mejora Extra: Protección contra silencios absolutos ---
+
+    def test_a_escala_log_cero_absoluto(self):
+        """
+        Verifica que la funcion maneje correctamente muestras con valor 0.0
+        para evitar el error matematico de log10(0) = -Infinito.
+        """
+        # Array trampa: tiene un cero en el medio
+        x = np.array([1.0, 0.0, 0.5])
+
+        # Si la función no tiene protección, esto lanzará un RuntimeWarning o crasheará
+        db = a_escala_log(x)
+
+        # El cero lineal debe convertirse en un valor dB negativo muy grande (el piso de ruido),
+        # pero NUNCA en un -Inf o NaN (Not a Number) que rompan cálculos posteriores.
+        assert not np.isinf(db[1]), "La función devolvió -Inf. Debe sumar un epsilon antes del log."
+        assert not np.isnan(db[1]), "La función devolvió NaN."
+        # Asumimos un piso de ruido típico de -100dB a -120dB para el cero
+        assert db[1] < -80.0
 
 
 class TestSintesizarRI:
@@ -99,6 +132,7 @@ class TestSintesizarRI:
         muestras_esperadas = int(duracion_esperada * fs)
         assert len(ri) == muestras_esperadas
         assert isinstance(ri, np.ndarray)
+
     def test_sintetizar_ri_decaimiento(self):
         """Verificar que el decaimiento por banda corresponde aproximadamente al T60 especificado."""
         fs = 44100
@@ -141,17 +175,18 @@ class TestSintesizarRI:
         assert np.isclose(t60_medido, t60_objetivo, atol=margen_error), \
             f"Fallo: T60 medido = {t60_medido:.2f}s, se esperaba = {t60_objetivo}s"
 
-def test_obtener_ri_pico():
-    """
-    Verificar que la RI obtenida por deconvolucion tiene 
-    un pico principal claramente identificable y coincide con la original.
-    """
+class Deconvolución:
+
+    def test_obtener_ri_pico(self):
+        """Verificar que la RI obtenida por deconvolucion tiene
+        un pico principal claramente identificable y coincide con la original."""
+
     fs = 44100
-    
+
     # 1. Generar sweep y filtro inverso (usamos uno cortito de 1 seg para que el test vuele)
     # Reemplazá esto por la llamada a la función que armaron en el Milestone 1
     sweep, filtro_inverso = generar_sine_sweep(f1=20, f2=20000, duracion=1.0, fs=fs)
-    
+
     # 2. Sintetizar una RI conocida (Simulamos la acústica de la sala)
     # Fabricamos un array donde el pico máximo esté en el índice 15 para alinearse 
     # perfectamente con el recorte (indice_max - 15) que hace tu función.
@@ -159,25 +194,25 @@ def test_obtener_ri_pico():
     ri_ideal[15] = 1.0  # El sonido directo (pico máximo)
     # Le sumamos un decaimiento exponencial suave simulando reverberación
     ri_ideal[16:] = np.exp(-np.linspace(0, 10, len(ri_ideal)-16)) * 0.4
-    
+
     # Simulamos la grabación física, la sala modifica el sweep
     grabacion_simulada = fftconvolve(sweep, ri_ideal, mode='full')
-    
+
     # 3. Aplicar tu función de deconvolución
     ri_recuperada = obtener_ri_desde_sweep(grabacion_simulada, filtro_inverso)
-    
+
     # 4. Verificar que la RI recuperada se parece a la RI original (correlacion cruzada > 0.9)
     # Recortamos la señal recuperada a la misma longitud que la ideal para compararlas 1 a 1
     longitud_min = min(len(ri_ideal), len(ri_recuperada))
     ri_ideal_recortada = ri_ideal[:longitud_min]
     ri_rec_recortada = ri_recuperada[:longitud_min]
-    
+
     # np.corrcoef devuelve una matriz de correlación 2x2. 
     # El valor en la posición [0, 1] es el coeficiente de Pearson cruzado entre ambas señales.
     correlacion = np.corrcoef(ri_ideal_recortada, ri_rec_recortada)[0, 1]
-    
+
     # Comprobamos la similitud (1.0 sería matemáticamente idéntico)
     assert correlacion > 0.9, f"Fallo: La correlación fue de {correlacion:.3f}, se esperaba > 0.9"
-    
+
     # Extra: verificamos que el pico efectivamente haya quedado normalizado a 1.0 como dice tu código
     assert np.isclose(np.max(np.abs(ri_recuperada)), 1.0)
