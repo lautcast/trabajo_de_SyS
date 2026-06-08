@@ -59,12 +59,8 @@ def cargar_audio(ruta: str) -> tuple[np.ndarray, int]:
         # Capturamos cualquier error interno de la librería.
 
         raise ValueError(f"Error al intentar leer el archivo de audio: {e}")
-    
-    # Creamos un diccionario que guarde las variables que debe devolver la funcion.
 
-    diccionario = {senal, fs}
-
-    return diccionario
+    return (senal, fs)
 
 
 from app.services.filter import filtro_octava
