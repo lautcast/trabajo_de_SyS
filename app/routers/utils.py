@@ -10,6 +10,7 @@ from fastapi.responses import StreamingResponse
 from scipy.io import wavfile
 
 from app.services.signal_utils import sintetizar_ri
+from app.services.signal_utils import cargar_audio
 
 
 router = APIRouter()
@@ -76,3 +77,74 @@ def post_sintetizar_ri(request: SintetizarRIRequest):
         media_type="audio/wav",
         headers={"Content-Disposition": f"attachment; filename=ri_sintetizada_{request.duracion}s.wav"}
     )
+
+from fastapi import APIRouter, File, UploadFile, HTTPException
+import shutil
+import tempfile
+from pathlib import Path
+import os
+# router = APIRouter()
+
+@router.post("/cargar-audio", summary="Subir y analizar archivo de audio")
+async def post_cargar_audio(archivo: UploadFile = File(..., description="Archivo de audio (.wav o .flac)")):
+    """
+    Recibe un archivo de audio del usuario, lo carga usando la función interna y devuelve su información (metadata).
+    """
+    
+    # 1. Validar la extensión rápidamente antes de guardar nada
+    # Usamos 'or ""' para asegurarnos de que Path siempre reciba un string, nunca un None.
+    nombre_archivo = archivo.filename or ""
+    extension = Path(nombre_archivo).suffix.lower()
+
+    if extension not in ['.wav', '.flac']:
+        raise HTTPException(status_code=400, detail=f"Formato no soportado. Solo se admiten .wav y .flac.")
+
+    # 2. Crear un archivo temporal en el servidor para guardar el audio subido
+    # Usamos delete=False para que no se borre antes de que sf.read termine de leerlo
+    with tempfile.NamedTemporaryFile(delete=False, suffix=extension) as tmp_file:
+        ruta_temporal = tmp_file.name
+        # Copiamos el contenido del archivo subido al archivo temporal en el disco
+        shutil.copyfileobj(archivo.file, tmp_file)
+
+    try:
+        # 3. Llamamos a TU función exacta, pasándole la ruta del archivo que acabamos de guardar
+        senal, fs = cargar_audio(ruta_temporal)
+        
+        # 4. Extraemos información útil para devolverle al usuario
+        # Verificamos si es mono (1D) o estéreo/multicanal (2D)
+        if senal.ndim == 1:
+            canales = 1
+            muestras = senal.shape[0]
+        else:
+            canales = senal.shape[1]
+            muestras = senal.shape[0]
+            
+        duracion_segundos = muestras / fs
+
+        # 5. Armamos la respuesta exitosa
+        return {
+            "status": "success",
+            "message": "Audio cargado y analizado correctamente",
+            "data": {
+                "nombre_original": archivo.filename,
+                "frecuencia_muestreo": fs,
+                "canales": canales,
+                "total_muestras": muestras,
+                "duracion_segundos": round(duracion_segundos, 3),
+                "forma_arreglo": senal.shape
+            }
+        }
+
+    except ValueError as e:
+        # Si tu función lanza un ValueError (ej. archivo corrupto), devolvemos Error 400
+        raise HTTPException(status_code=400, detail=str(e))
+        
+    except FileNotFoundError as e:
+        # Si por alguna razón falla la ruta
+        raise HTTPException(status_code=500, detail="Error interno al manejar el archivo temporal.")
+        
+    finally:
+        # 6. LIMPIEZA: Siempre borramos el archivo temporal para no llenar el disco del servidor
+        # Esto se ejecuta sin importar si hubo un error o fue un éxito
+        if os.path.exists(ruta_temporal):
+            os.remove(ruta_temporal)
