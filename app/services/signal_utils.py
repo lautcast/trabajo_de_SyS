@@ -65,7 +65,7 @@ def cargar_audio(ruta: str) -> tuple[np.ndarray, int]:
 
 from app.services.filter import filtro_octava
 
-def sintetizar_ri(t60_por_banda: dict[float, float], fs: int, duracion: float) -> np.ndarray:
+def sintetizar_ri(t60_por_banda: dict[float, float] = {31.5: 2.4, 63: 2.2 ,125: 2.0, 250: 1.8, 500: 1.5, 1000: 1.2, 2000: 1.0, 4000: 0.8}, fs: int = 48000, duracion: float = 2) -> np.ndarray:
     """
     Sintetiza una respuesta al impulso con valores de T60 conocidos por banda.
 
@@ -83,11 +83,11 @@ def sintetizar_ri(t60_por_banda: dict[float, float], fs: int, duracion: float) -
 
     total_muestras = int(fs * duracion)
     
-    t = np.linspace(0.0, duracion, total_muestras, endpoint=False, dtype=np.float64)/ fs
+    t = np.arange(total_muestras)/ fs
     
     # Inicializamos un arreglo vacío de ceros donde iremos sumando cada banda
 
-    ri_total = np.zeros(total_muestras, dtype=np.float64)
+    ri_total = np.zeros_like(t)
     
     # Fabricamos un bucle que 
 
@@ -101,26 +101,31 @@ def sintetizar_ri(t60_por_banda: dict[float, float], fs: int, duracion: float) -
    
         ruido_filtrado = filtro_octava(ruido_blanco, freq_central, fs)
 
+        # Fabricamos la exponencial decreciente que sea nuestra respuesta al impulso
+
+        alfa = (3 * np.log(10))/(t60)
+
+        exponencial = np.exp((-alfa) * t)
+
+        # Multiplicamos la exponencial con la envolvente de ruido blanco gaussiano
+
+        ri_para_freq_central = ruido_filtrado * exponencial
+
         # Normalizamos la senal resultante, buscando el pico máximo absoluto y dividiendo todo por ese valor
 
-        valor_maximo = np.max(np.abs(ruido_filtrado))
-        if valor_maximo > 0:
-            ruido_filtrado = ruido_filtrado / valor_maximo
-        
-        # Aplicar la envolvente exponencial
-        # Matemáticamente, para que la energía caiga 60 dB en t = T60, el coeficiente de atenuación alpha de la amplitud es ln(1000) / T60
-        
-        alpha = np.log(1000) / t60
-        envolvente = np.exp(-alpha * t)
-        
-        # Multiplicamos el ruido filtrado por la curva de decaimiento
-
-        componente_banda = ruido_filtrado * envolvente
         
         # Sumamos todas las componentes filtradas en el arreglo hecho anteriormente
 
-        ri_total += componente_banda
+        ri_total += ri_para_freq_central
         
+    
+    # Normalizamos la senal resultante, buscando el pico máximo absoluto y dividiendo todo por ese valor
+    
+    valor_maximo = np.max(np.abs(ri_total))
+    
+    if valor_maximo > 0:
+        ruido_filtrado = ruido_filtrado / valor_maximo
+
     return ri_total
 
 
