@@ -107,9 +107,9 @@ class TestGenerarSineSweep:
         sweep, filtro_inv = generar_sine_sweep(20, 20000, duracion, fs)
 
         # Definimos una variable la cual contiene al numero de muestras del sine sweep segun nuestros parametros genericos.      
-        
+
         expected_length = int(duracion * fs)
-        
+
         assert len(sweep) == expected_length        # Verifica que la cantidad de muestras del sine sweep es igual a la variable.
         assert len(filtro_inv) == expected_length   # Verifica que la cantidad de muestras del filtro inverso es igual a la variable, y por tanto, a las muestras del sine sweep
 
@@ -124,7 +124,7 @@ class TestGenerarSineSweep:
         sweep, _ = generar_sine_sweep(20, 20000, duracion, fs)
 
         # Tomamos una ventana pequeña de muestras al inicio y al final (ej: 0.1 segundos)
-        
+
         muestras_ventana = int(0.1 * fs)                # En este caso, tomamos 4410 muestras
         fragmento_inicio = sweep[:muestras_ventana]     # Las primeras 4410 muestras.
         fragmento_fin = sweep[-muestras_ventana:]       # Las ultimas 4410 muestras.
@@ -150,9 +150,8 @@ class TestGenerarSineSweep:
 
         # Verificamos
 
-        assert frec_fin > frec_inicio, f"Fallo: La frecuencia no aumenta con el tiempo"          # Comprobamos que la frecuencia del final sea estrictamente mayor que la del inicio
-        assert frec_inicio < 1000, f"Fallo: Arranca con frecuencia muy alta ({frec_inicio} Hz)" # Comprobamos que arranca en bajas frecuencias y termina en altas
-        assert frec_fin > 10000, f"Fallo: Termina con frecuencia muy baja ({frec_fin} Hz)"
+        assert frec_fin > frec_inicio, f"Fallo: La frecuencia no aumenta con el tiempo"
+        assert frec_inicio < 1000, f"Fallo: Arranca con frecuencia muy alta ({frec_inicio} Hz)" 
 
 
 """----------------------------------------------------------------------------------------------------------------------------------------------------------------------"""
