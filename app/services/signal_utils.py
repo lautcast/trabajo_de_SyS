@@ -124,9 +124,9 @@ def sintetizar_ri(t60_por_banda: dict[float, float] = {31.5: 2.4, 63: 2.2 ,125: 
     valor_maximo = np.max(np.abs(ri_total))
     
     if valor_maximo > 0:
-        ruido_filtrado = ruido_filtrado / valor_maximo
+        ri_total_normalizado = ri_total / valor_maximo
 
-    return ri_total
+    return ri_total_normalizado
 
 
 def obtener_ri_desde_sweep(grabacion: np.ndarray, filtro_inverso: np.ndarray) -> np.ndarray:
