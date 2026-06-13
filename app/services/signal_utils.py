@@ -65,7 +65,7 @@ def cargar_audio(ruta: str) -> tuple[np.ndarray, int]:
 
 from app.services.filter import filtro_octava
 
-def sintetizar_ri(t60_por_banda: dict[float, float] = {31.5: 2.4, 63: 2.2 ,125: 2.0, 250: 1.8, 500: 1.5, 1000: 1.2, 2000: 1.0, 4000: 0.8}, fs: int = 48000, duracion: float = 2) -> np.ndarray:
+def sintetizar_ri(t60_por_banda: dict[float, float] = {31.5: 2.0, 63: 2.0 ,125: 1.8, 250: 1.6, 500: 1.4, 1000: 1.2, 2000: 1.0, 4000: 0.8}, fs: int = 48000, duracion: float = 2) -> np.ndarray:
     """
     Sintetiza una respuesta al impulso con valores de T60 conocidos por banda.
 
@@ -124,9 +124,9 @@ def sintetizar_ri(t60_por_banda: dict[float, float] = {31.5: 2.4, 63: 2.2 ,125: 
     valor_maximo = np.max(np.abs(ri_total))
     
     if valor_maximo > 0:
-        ruido_filtrado = ruido_filtrado / valor_maximo
+        ri_total_normalizada = ri_total / valor_maximo
 
-    return ri_total
+    return ri_total_normalizada
 
 
 def obtener_ri_desde_sweep(grabacion: np.ndarray, filtro_inverso: np.ndarray) -> np.ndarray:
@@ -153,10 +153,35 @@ def obtener_ri_desde_sweep(grabacion: np.ndarray, filtro_inverso: np.ndarray) ->
     # Buscamos el índice donde ocurre el valor máximo absoluto.
 
     indice_max = np.argmax(np.abs(ri))
+
+    # Buscamos cuál es la amplitud máxima de la señal en el índice máximo.
+
+    pico_maximo = np.abs(ri[indice_max])
     
+    # Calculamos el valor RMS de amplitud a partir del valor máximo.
+
+    valor_rms = pico_maximo/np.sqrt(2)
+
+    # Ahora buscamos el primer indice que 
+
+    indices_rms = np.where(np.abs(ri[:indice_max]) < valor_rms)[0]
+
+    # Verificamos que el array no esté vacío (por seguridad)
+
+    if len(indices_rms) > 0:
+
+    # Tomamos el ÚLTIMO índice antes de que la señal supere el umbral RMS
+
+        ultimo_indice_bajo_rms = indices_rms[-1]
+
+    else:
+
+        ultimo_indice_bajo_rms = 0
+
     # Comenzamos en el pico, o ligeramente antes.
 
-    inicio = max(0, indice_max - 15)
+    inicio = max(0, ultimo_indice_bajo_rms)
+
     ri_recortado = ri[inicio:]
     
     # Dividimos todo el array por el valor máximo absoluto para que quede entre -1 y 1
