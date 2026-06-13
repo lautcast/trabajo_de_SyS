@@ -64,3 +64,6 @@ Thumbs.db
 
 # Datos de medicion
 data/
+
+# pruebas locales
+pruebas_locales/
