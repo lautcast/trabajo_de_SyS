@@ -31,10 +31,11 @@ class TestCargarAudio:
         senal_dummy = np.random.randint(-32768, 32767, fs_esperada, dtype=np.int16)
         wavfile.write(ruta_dummy, fs_esperada, senal_dummy)
 
-        # 2. Ejecutamos la función
+        # Ejecutamos la función
         signal, fs = cargar_audio(str(ruta_dummy))
 
-        # 3. Verificamos que cargó bien la info
+        # Verificamos que cargó bien la información.
+
         assert fs == fs_esperada
         assert isinstance(signal, np.ndarray)
         assert len(signal) == len(senal_dummy)
@@ -115,9 +116,8 @@ class TestAEscalaLog:
         # pero NUNCA en un -Inf o NaN (Not a Number) que rompan cálculos posteriores.
         assert not np.isinf(db[1]), "La función devolvió -Inf. Debe sumar un epsilon antes del log."
         assert not np.isnan(db[1]), "La función devolvió NaN."
-        # Asumimos un piso de ruido típico de -100dB a -120dB para el cero
-        assert db[1] < -80.0
-
+        # Asumimos un piso de ruido típico de -120dB para el cero
+        assert db[1] == -120.0
 
 class TestSintesizarRI:
     """Tests para la síntesis de Respuestas al Impulso (RI)."""
@@ -204,17 +204,23 @@ class Deconvolución:
     ri_recuperada = obtener_ri_desde_sweep(grabacion_simulada, filtro_inverso)
 
     # 4. Verificar que la RI recuperada se parece a la RI original (correlacion cruzada > 0.9)
-    # Recortamos la señal recuperada a la misma longitud que la ideal para compararlas 1 a 1
-    longitud_min = min(len(ri_ideal), len(ri_recuperada))
-    ri_ideal_recortada = ri_ideal[:longitud_min]
-    ri_rec_recortada = ri_recuperada[:longitud_min]
-
-    # np.corrcoef devuelve una matriz de correlación 2x2. 
-    # El valor en la posición [0, 1] es el coeficiente de Pearson cruzado entre ambas señales.
-    correlacion = np.corrcoef(ri_ideal_recortada, ri_rec_recortada)[0, 1]
-
-    # Comprobamos la similitud (1.0 sería matemáticamente idéntico)
+    # Como el inicio ahora es dinámico (RMS), los picos ya no coinciden en el índice 15.
+    # Buscamos el índice del pico máximo en cada arreglo para alinearlos:
+    pico_ideal = np.argmax(np.abs(ri_ideal))
+    pico_recuperado = np.argmax(np.abs(ri_recuperada))
+    
+    # Calculamos cuántas muestras podemos comparar desde el pico hacia adelante
+    muestras_post_pico = min(len(ri_ideal) - pico_ideal, len(ri_recuperada) - pico_recuperado)
+    
+    # Recortamos ambas señales empezando exactamente en sus picos
+    ri_ideal_alineada = ri_ideal[pico_ideal : pico_ideal + muestras_post_pico]
+    ri_rec_alineada = ri_recuperada[pico_recuperado : pico_recuperado + muestras_post_pico]
+    
+    # Calculamos el coeficiente de Pearson con las señales sincronizadas
+    correlacion = np.corrcoef(ri_ideal_alineada, ri_rec_alineada)[0, 1]
+    
+    # Comprobamos la similitud
     assert correlacion > 0.9, f"Fallo: La correlación fue de {correlacion:.3f}, se esperaba > 0.9"
-
-    # Extra: verificamos que el pico efectivamente haya quedado normalizado a 1.0 como dice tu código
+    
+    # Extra: verificamos que el pico efectivamente haya quedado normalizado a 1.0
     assert np.isclose(np.max(np.abs(ri_recuperada)), 1.0), "Fallo: El pico máximo de la RI recuperada no está normalizado a 1.0"
