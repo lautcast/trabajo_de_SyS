@@ -32,6 +32,7 @@ def cargar_audio(ruta: str) -> tuple[np.ndarray, int]:
     ValueError
         Si el formato del archivo no es soportado (no es .wav ni .flac).
     """
+    
     # Convertimos la ruta o direccion del archivo a un objeto Path para manejarlo de forma segura
     
     ruta_obj = Path(ruta)
@@ -41,7 +42,7 @@ def cargar_audio(ruta: str) -> tuple[np.ndarray, int]:
     if not ruta_obj.is_file():
         raise FileNotFoundError(f"El archivo no existe en la ruta especificada: {ruta_obj.absolute()}")
     
-    # Verificamos la extension (aceptamos .wav y .flac ignorando mayúsculas)
+    # Verificamos la extension (aceptamos .wav y .flac ignorando mayúsculas).
 
     extension = ruta_obj.suffix.lower()
 
@@ -79,52 +80,57 @@ def sintetizar_ri(t60_por_banda: dict[float, float] = {31.5: 2.4, 63: 2.2 ,125: 
     -------
     np.ndarray --> Respuesta al impulso sintetizada y normalizada.
     """
-    # Calculamos la cantidad total de muestras y creamos el vector de tiempo (t)
+    
+    # Calculamos la cantidad total de muestras y creamos el vector de tiempo (t).
 
     total_muestras = int(fs * duracion)
     
     t = np.arange(total_muestras)/ fs
     
-    # Inicializamos un arreglo vacío de ceros donde iremos sumando cada banda
+    # Inicializamos un arreglo vacío de ceros donde iremos sumando cada banda.
 
     ri_total = np.zeros_like(t)
     
-    # Fabricamos un bucle que 
+    # Fabricamos un bucle for que aplique el filtro de octava por banda.
 
     for freq_central, t60 in t60_por_banda.items():
 
-        # Generamos un ruido blanco con la funcion np.random.randn
+        # Generamos un ruido blanco con la funcion np.random.randn.
         
         ruido_blanco = np.random.randn(total_muestras)
         
-        # Filtramos con filtro pasa-banda centrado en la frecuencia central
+        # Filtramos con filtro pasa-banda centrado en la frecuencia central.
    
         ruido_filtrado = filtro_octava(ruido_blanco, freq_central, fs)
 
-        # Fabricamos la exponencial decreciente que sea nuestra respuesta al impulso
+        # Fabricamos la exponencial decreciente.
 
         alfa = (3 * np.log(10))/(t60)
 
         exponencial = np.exp((-alfa) * t)
 
-        # Multiplicamos la exponencial con la envolvente de ruido blanco gaussiano
+        # Multiplicamos la exponencial con la envolvente de ruido blanco gaussiano.
 
         ri_para_freq_central = ruido_filtrado * exponencial
-
-        # Normalizamos la senal resultante, buscando el pico máximo absoluto y dividiendo todo por ese valor
-
         
-        # Sumamos todas las componentes filtradas en el arreglo hecho anteriormente
+        # Sumamos todas las componentes filtradas en el arreglo hecho anteriormente.
 
         ri_total += ri_para_freq_central
         
-    
-    # Normalizamos la senal resultante, buscando el pico máximo absoluto y dividiendo todo por ese valor
-    
+    # Normalizamos la señal resultante, buscando el pico máximo absoluto y dividiendo todo por ese valor.
+    # Prevenimos la división por cero. 
+
     valor_maximo = np.max(np.abs(ri_total))
     
     if valor_maximo > 0:
+
         ri_total_normalizado = ri_total / valor_maximo
+    
+    else: 
+
+        ri_total_normalizado = ri_total
+
+    # Devolvemos la respuesta al impulso normalizada.
 
     return ri_total_normalizado
 
@@ -153,22 +159,51 @@ def obtener_ri_desde_sweep(grabacion: np.ndarray, filtro_inverso: np.ndarray) ->
     # Buscamos el índice donde ocurre el valor máximo absoluto.
 
     indice_max = np.argmax(np.abs(ri))
-    
-    # Comenzamos en el pico, o ligeramente antes.
 
-    inicio = max(0, indice_max - 15)
+    # Buscamos cuál es la amplitud máxima de la señal en el índice máximo.
+
+    pico_maximo = np.abs(ri[indice_max])
+    
+    # Calculamos el valor RMS de amplitud a partir del valor máximo.
+
+    valor_rms = pico_maximo/np.sqrt(2)
+
+    # Ahora buscamos los indices donde la amplitud es menor que el valor RMS,
+    # desde el indice 0 hasta el índice con valor de amplitud máximo. 
+
+    indices_rms = np.where(np.abs(ri[:indice_max]) < valor_rms)[0]
+
+    # Verificamos que el array no esté vacío (por seguridad).
+
+    if len(indices_rms) > 0:
+
+    # Tomamos el último índice antes de que la señal supere el valor RMS.
+
+        ultimo_indice_bajo_rms = indices_rms[-1]
+
+    else:
+
+        ultimo_indice_bajo_rms = 0
+
+    # Comenzamos en el último indice por debajo del valor RMS, o en su defecto en el indice 0.
+
+    inicio = max(0, ultimo_indice_bajo_rms)
+
+    # Pedimos que la respuesta al impulso comience en donde estipulamos antes.
+
     ri_recortado = ri[inicio:]
     
-    # Dividimos todo el array por el valor máximo absoluto para que quede entre -1 y 1
-    pico_maximo = np.max(np.abs(ri_recortado))
-    
-    # Prevenir división por cero en caso de que la señal sea nula
-    if pico_maximo > 0:
-        h_norm = ri_recortado / pico_maximo
-    else:
-        h_norm = ri_recortado
+    # Dividimos todo el array por el valor máximo absoluto para que quede entre -1 y 1.
+    # Tambien prevenimos la división por cero en el caso de señal nula.
 
-    return h_norm
+    if pico_maximo > 0:
+        ri_recortado_normalizado = ri_recortado / pico_maximo
+    else:
+        ri_recortado_normalizado = ri_recortado
+
+    # Devolvemos la respuesta al impulso recortada normalizada.
+
+    return ri_recortado_normalizado
 
 
 def a_escala_log(signal: np.ndarray) -> np.ndarray:
@@ -183,36 +218,38 @@ def a_escala_log(signal: np.ndarray) -> np.ndarray:
     np.ndarray --> Senal en escala logaritmica (dB), normalizada a 0 dB en el maximo.
     """
 
-    # Calculamos la amplitud de la senal
+    # Calculamos la amplitud de la señal.
 
     amplitud = np.abs(signal)
 
-    # Calculamos el maximo de amplitud de la senal
+    # Calculamos el maximo de amplitud de la señal.
 
     amp_max = np.max(amplitud)
 
-    # Evitamos la division por cero
+    # Antes de normalizr, evitamos la division por cero en caso de señal nula.
 
     if amp_max == 0.0:
         return np.full_like(signal, -120.00 , dtype=float)
     else:
         pass
 
-    # Normalizamos la senal
+    # Normalizamos la señal.
 
     signal_normalizada = amplitud/amp_max
 
-    # Evitamos el logaritmo de cero
+    # Evitamos el logaritmo de cero, utilizando el epsilon.
 
     epsilon = np.finfo(float).eps
     signal_final = np.maximum(signal_normalizada, epsilon)
 
-    # Finalmente, pasamos la senal a escala logaritmica
+    # Finalmente, pasamos la senal a escala logaritmica.
 
     signal_db = 20 * np.log10(signal_final)
 
-    # Definimos el piso de ruido para que no hayan niveles extremadamente negativos
+    # Definimos el piso de ruido para que no hayan niveles extremadamente negativos.
 
     signal_db_piso_de_ruido = np.maximum(signal_db, -120.00)
+
+    # Devolvemos la señal con su amplitud en dB.
 
     return signal_db_piso_de_ruido
