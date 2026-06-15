@@ -4,6 +4,7 @@ Milestone 1: Generacion de senales.
 """
 
 import numpy as np
+from scipy.signal.windows import tukey
 
 
 def generar_sine_sweep(f1: float = 20.00, f2: float = 20000.00, duracion: float = 2, fs: int = 48000) -> tuple[np.ndarray, np.ndarray]:
@@ -43,7 +44,7 @@ def generar_sine_sweep(f1: float = 20.00, f2: float = 20000.00, duracion: float 
     # Construimos la fase del sine sweep senoidal a partir de la tecnia Farina.
     
     fase = (2 * np.pi * f1 * duracion / (np.log(f2 / f1))) * (np.exp((t / duracion) * (np.log(f2 / f1))) - 1)
-    
+
     # Creamos el sine sweep a partir de dicha fase.
     
     sweep = np.sin(fase)
@@ -54,7 +55,8 @@ def generar_sine_sweep(f1: float = 20.00, f2: float = 20000.00, duracion: float 
 
     # El sine sweep tiene mucha energía acumulada en los graves y poca en los agudos, por lo que queremos que el filtro inverso compense esta situacion.
     # Para ello, creamos una envolvente que depende del vector tiempo, la cual atenúa las frecuencias bajas y amplifica las altas.
-    envolvente = (f2 / f1) ** -(t / duracion)
+
+    envolvente = (f2 / f1) ** -(t / (2 * duracion))
     
     # Finalmente multiplicamos la envolvente con el sine sweep invertido para obtener el filtro inverso.
 
