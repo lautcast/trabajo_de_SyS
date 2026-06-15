@@ -15,7 +15,7 @@ from app.services.filter import filtro_octava
 # 1. CARGA DEL ARCHIVO .WAV
 # ==========================================
 # Cambiá el string por la ruta exacta donde guardaste tu RI de OpenAIR
-ruta_openair = r"C:\Users\12cas\OneDrive\Desktop\OPENAIR\mh3_000_ortf_48k.wav" 
+ruta_openair = r"C:\Users\lautaro\Desktop\OPENAIR\mh3_000_ortf_48k.wav"
 
 print(f"Cargando audio desde: {ruta_openair}")
 datos = cargar_audio(ruta_openair)
