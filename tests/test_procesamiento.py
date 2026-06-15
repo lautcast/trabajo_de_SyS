@@ -103,12 +103,12 @@ class TestAEscalaLog:
 
     def test_a_escala_log_relacion(self):
         """Verifica que una senal con amplitud mitad da aproximadamente -6 dB."""
-        # Comparamos el valor máximo (1.0) con su mitad exacta (0.5)
+        #Comparamos el valor máximo (1.0) con su mitad exacta (0.5)
         x = np.array([1.0, 0.5])
         db = a_escala_log(x)
 
-        # En audio (presión/voltaje), 20 * log10(0.5 / 1.0) = -6.02059... dB
-        # Usamos np.isclose con tolerancia porque -6 es una aproximación teórica
+        #En audio (presión/voltaje), 20 * log10(0.5 / 1.0) = -6.02059... dB
+        #Usamos np.isclose con tolerancia porque -6 es una aproximación teórica
         assert np.isclose(db[1], -6.0206, atol=1e-4)
 
     def test_a_escala_log_cero_absoluto(self):
