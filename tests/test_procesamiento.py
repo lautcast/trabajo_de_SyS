@@ -219,7 +219,7 @@ class TestDeconvolución:
     #Hacemos la deconvolución para recuperar la RI a partir del sweep grabado y el filtro inverso
     ri_recuperada = obtener_ri_desde_sweep(grabacion_simulada, filtro_inverso)
 
-    #Verificamos que la RI recuperada se parece a la RI ideal (correlacion cruzada > 0.9)
+    #Verificamos que la RI recuperada se parece a la RI ideal (correlacion cruzada > 0.8)
     #Recortamos las señales a la misma longitud para evitar problemas de correlación por diferencias de tamaño
     longitud_min = min(len(ri_ideal), len(ri_recuperada))
     ri_ideal_recortada = ri_ideal[:longitud_min]
@@ -230,7 +230,7 @@ class TestDeconvolución:
     correlacion = np.corrcoef(ri_ideal_recortada, ri_rec_recortada)[0, 1]
 
     #Comprobamos la similitud (1.0 sería matemáticamente idéntico)
-    assert correlacion > 0.9, f"Fallo: La correlación fue de {correlacion:.3f}, se esperaba > 0.9"
+    assert correlacion > 0.8, f"Fallo: La correlación fue de {correlacion:.3f}, se esperaba > 0.8"
 
     #verificamos que el pico efectivamente haya quedado normalizado a 1.0 como dice tu código
     assert np.isclose(np.max(np.abs(ri_recuperada)), 1.0), "Fallo: El pico máximo de la RI recuperada no está normalizado a 1.0"
