@@ -36,10 +36,10 @@ class TestCargarAudio:
         senal_dummy = np.random.randint(-32768, 32767, fs_esperada, dtype=np.int16)
         wavfile.write(ruta_dummy, fs_esperada, senal_dummy)
 
-        # 2. Ejecutamos la función
+        #Ejecutamos la función
         signal, fs = cargar_audio(str(ruta_dummy))
 
-        # 3. Verificamos que cargó bien la info
+        #Verificamos que cargó bien la info
         assert fs == fs_esperada
         assert isinstance(signal, np.ndarray)
         assert len(signal) == len(senal_dummy)
@@ -63,11 +63,14 @@ class TestCargarAudio:
         ruta_dummy = tmp_path / "prueba_norm.wav"
         fs_esperada = 44100
 
+        #Se genera una señal con valores extremos (máximo positivo, máximo negativo y un valor intermedio) para probar la normalización
+        #Se adjunta la ruta del archivo temporal, la frecuencia de muestreo esperada y la señal con valores extremos
         senal_extrema = np.array([32767, 0, -32768, 15000], dtype=np.int16)
         wavfile.write(ruta_dummy, fs_esperada, senal_extrema)
 
         signal, _ = cargar_audio(str(ruta_dummy))
 
+        #calculamos el máximo de la señal con la función np.max(np.abs(signal)) para obtener la amplitud máxima absoluta de la señal cargada
         max_amplitud = np.max(np.abs(signal))
         assert max_amplitud <= 1.0
 
@@ -217,18 +220,18 @@ class TestDeconvolución:
     #Hacemos la deconvolución para recuperar la RI a partir del sweep grabado y el filtro inverso
     ri_recuperada = obtener_ri_desde_sweep(grabacion_simulada, filtro_inverso)
 
-    # 4. Verificar que la RI recuperada se parece a la RI original (correlacion cruzada > 0.9)
-    # Recortamos la señal recuperada a la misma longitud que la ideal para compararlas 1 a 1
+    #Verificamos que la RI recuperada se parece a la RI ideal (correlacion cruzada > 0.9)
+    #Recortamos las señales a la misma longitud para evitar problemas de correlación por diferencias de tamaño
     longitud_min = min(len(ri_ideal), len(ri_recuperada))
     ri_ideal_recortada = ri_ideal[:longitud_min]
     ri_rec_recortada = ri_recuperada[:longitud_min]
 
-    # np.corrcoef devuelve una matriz de correlación 2x2. 
-    # El valor en la posición [0, 1] es el coeficiente de Pearson cruzado entre ambas señales.
+    #np.corrcoef devuelve una matriz de correlación 2x2. 
+    #El valor en la posición [0, 1] es el coeficiente de Pearson cruzado entre ambas señales.
     correlacion = np.corrcoef(ri_ideal_recortada, ri_rec_recortada)[0, 1]
 
-    # Comprobamos la similitud (1.0 sería matemáticamente idéntico)
+    #Comprobamos la similitud (1.0 sería matemáticamente idéntico)
     assert correlacion > 0.9, f"Fallo: La correlación fue de {correlacion:.3f}, se esperaba > 0.9"
 
-    # Extra: verificamos que el pico efectivamente haya quedado normalizado a 1.0 como dice tu código
+    #verificamos que el pico efectivamente haya quedado normalizado a 1.0 como dice tu código
     assert np.isclose(np.max(np.abs(ri_recuperada)), 1.0), "Fallo: El pico máximo de la RI recuperada no está normalizado a 1.0"
