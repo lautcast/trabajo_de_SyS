@@ -204,7 +204,7 @@ class TestDeconvolución:
 
     #Generamos sweep y filtro inverso (usamos uno cortito de 1 seg para que el test vuele)
     #Reemplazamos esto por la llamada a la función de M1 con sus respectivos parámetros
-    sweep, filtro_inverso = generar_sine_sweep(f1=20, f2=20000, duracion=1.0, fs=fs)
+    sweep, filtro_inverso = generar_sine_sweep(f1=20, f2=20000, duracion=2.0, fs=fs)
 
     #Sintetizamos una RI conocida (Simulamos la acústica de la sala)
     #Fabricamos un array donde el pico máximo esté en el índice 15 para alinearse perfectamente con el recorte (indice_max - 15) que hace tu función.
