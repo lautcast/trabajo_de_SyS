@@ -54,10 +54,8 @@ def filtro_octava(signal_in: np.ndarray, fc: float, fs: int, orden: int = 4) -> 
 
     # Calculamos los parámetros del filtro butterworth
 
-    # SOLUCIÓN: Usar output='sos' en lugar de b, a
     sos = signal.butter(orden, [w_inf, w_sup], btype='band', output='sos')
 
-    # Y usar sosfiltfilt en lugar de filtfilt
     signal_filtrada = signal.sosfiltfilt(sos, signal_in)
 
     return signal_filtrada
