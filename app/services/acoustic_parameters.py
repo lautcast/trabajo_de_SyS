@@ -60,7 +60,6 @@ def integral_schroeder(ri: np.ndarray) -> np.ndarray:
     return edc_normalizada
 
 
-
 def regresion_lineal(x: np.ndarray, y: np.ndarray) -> tuple[float, float]:
     """Calcula la regresion lineal por minimos cuadrados.
 
