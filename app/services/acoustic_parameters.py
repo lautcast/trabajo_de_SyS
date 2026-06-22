@@ -4,9 +4,9 @@ Milestone 3: Analisis de parametros acusticos.
 """
 
 import numpy as np
+from scipy.signal import hilbert
 
-
-def suavizar_signal(signal: np.ndarray, ventana: int) -> np.ndarray:
+def suavizar_signal(signal: np.ndarray, ventana: int|str = 'hilbert') -> np.ndarray:
     """Aplica un suavizado por media movil a la senal.
 
     Parameters
@@ -21,7 +21,31 @@ def suavizar_signal(signal: np.ndarray, ventana: int) -> np.ndarray:
     np.ndarray
         Senal suavizada, de la misma longitud que ``signal``.
     """
-    raise NotImplementedError("Implementar en Milestone 3")
+    if ventana == 'hilbert':
+        # --- Opción B: Envolvente de Hilbert ---
+        analitica = hilbert(signal)
+        envolvente = np.abs(analitica)
+        
+        # Nota: Hilbert devuelve amplitud. Si los pasos posteriores requieren 
+        # estrictamente energía, puedes devolver envolvente**2
+        return envolvente
+        
+    elif isinstance(ventana, int) and ventana > 0:
+        # --- Opción A: Media Móvil ---
+        # 1. Trabajamos con la energía (amplitud al cuadrado)
+        energia = signal ** 2
+        
+        # 2. Creamos el kernel para el promedio
+        kernel = np.ones(ventana) / ventana
+        
+        # 3. Aplicamos la convolución para deslizar la ventana rápidamente
+        # mode='same' asegura que el arreglo de salida tenga el mismo tamaño que la entrada
+        senal_suavizada = np.convolve(energia, kernel, mode='same')
+        
+        return senal_suavizada
+        
+    else:
+        raise ValueError("El parámetro 'ventana' debe ser 'hilbert' o un entero positivo.")
 
 
 def integral_schroeder(ri: np.ndarray) -> np.ndarray:
