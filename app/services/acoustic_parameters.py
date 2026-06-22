@@ -42,7 +42,23 @@ def integral_schroeder(ri: np.ndarray) -> np.ndarray:
     .. [1] Schroeder, M. R. (1965). "New method of measuring reverberation
        time." The Journal of the Acoustical Society of America.
     """
-    raise NotImplementedError("Implementar en Milestone 3")
+    
+    # 1. Elevamos la señal al cuadrado para obtener la energía de cada muestra.
+    energia = ri ** 2
+    
+    # 2. Aplicamos la integral hacia atrás. 
+    # energia[::-1] da vuelta el arreglo.
+    # np.cumsum() hace la suma acumulativa (la integral discreta).
+    # [::-1] al final lo vuelve a poner en el orden cronológico correcto.
+    edc = np.cumsum(energia[::-1])[::-1]
+    
+    # 3. Normalizamos la curva. 
+    # Como es una suma que va bajando, el valor máximo siempre está en el índice 0.
+    # Al dividir todo por ese máximo, la curva arrancará exactamente en 1.0.
+    edc_normalizada = edc / np.max(edc)
+    
+    return edc_normalizada
+
 
 
 def regresion_lineal(x: np.ndarray, y: np.ndarray) -> tuple[float, float]:
