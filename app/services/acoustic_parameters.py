@@ -113,3 +113,5 @@ def metodo_lundeby(ri: np.ndarray, fs: int) -> int:
        room acoustics." Acta Acustica.
     """
     raise NotImplementedError("Implementar en Milestone 3 (opcional)")
+
+#prueba
