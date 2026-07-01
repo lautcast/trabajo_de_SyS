@@ -11,38 +11,46 @@ def suavizar_signal(signal: np.ndarray, ventana: int|str = 'hilbert') -> np.ndar
 
     Parameters
     ----------
-    signal : np.ndarray
-        Senal de entrada (array 1D).
-    ventana : int
-        Tamano de la ventana de suavizado en muestras.
+    signal : np.ndarray --> Senal de entrada (array 1D).
+    
+    ventana : int --> Tamaño de la ventana de suavizado en muestras.
 
     Returns
     -------
-    np.ndarray
-        Senal suavizada, de la misma longitud que ``signal``.
+    np.ndarray --> Senal suavizada, de la misma longitud que ``signal``.
     """
-    if ventana == 'hilbert':
-        # --- Opción B: Envolvente de Hilbert ---
+    
+    # Dependiendo la ventana escogida por el usuario, se tienen dos opciones.
+
+    # Primera opción.   
+
+    if isinstance(ventana, int) and ventana > 0:
+        
+        # Trabajamos con la energía.
+        
+        energia = signal ** 2
+        
+        # Creamos el kernel para el promedio.
+
+        kernel = np.ones(ventana) / ventana
+        
+        # Aplicamos la convolución para deslizar la ventana rápidamente.
+        # El mode='same' nos asegura que el arreglo de salida tenga el mismo tamaño que la entrada.
+
+        senal_suavizada = np.convolve(energia, kernel, mode='same')
+        
+        return senal_suavizada
+
+    # Segunda opción.
+
+    elif ventana == 'hilbert':
+        
         analitica = hilbert(signal)
         envolvente = np.abs(analitica)
         
         # Nota: Hilbert devuelve amplitud. Si los pasos posteriores requieren 
         # estrictamente energía, puedes devolver envolvente**2
         return envolvente
-        
-    elif isinstance(ventana, int) and ventana > 0:
-        # --- Opción A: Media Móvil ---
-        # 1. Trabajamos con la energía (amplitud al cuadrado)
-        energia = signal ** 2
-        
-        # 2. Creamos el kernel para el promedio
-        kernel = np.ones(ventana) / ventana
-        
-        # 3. Aplicamos la convolución para deslizar la ventana rápidamente
-        # mode='same' asegura que el arreglo de salida tenga el mismo tamaño que la entrada
-        senal_suavizada = np.convolve(energia, kernel, mode='same')
-        
-        return senal_suavizada
         
     else:
         raise ValueError("El parámetro 'ventana' debe ser 'hilbert' o un entero positivo.")
@@ -136,15 +144,16 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
        parameters -- Part 1: Performance spaces."
     """
 
-    # Frecuencias centrales típicas de bandas de octava (en Hz)
+    # Frecuencias centrales normalizadas según la norma IEC 61620
+    
     frecuencias_centrales = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
     
-    # Estructura del diccionario de salida tal como requiere la firma
-    resultados = {
-        'EDT': {}, 'T10': {}, 'T20': {}, 'T30': {}, 'D50': {}, 'C80': {}
-    }
+    # Creamos el diccionario valores vacíos y claves correspondientes a los parámetrosa acústicos.
 
-    # Bucle principal por cada banda de frecuencia
+    resultados = {'EDT': {}, 'T10': {}, 'T20': {}, 'T30': {}, 'D50': {}, 'C80': {}}
+
+    # Hacemos un bucle principal por cada frecuencia.
+
     for fc in frecuencias_centrales:
         # --- 0. Filtrado ---
         # Aquí aplicarías tu banco de filtros (ej. scipy.signal.sosfiltfilt)
@@ -224,25 +233,127 @@ def metodo_lundeby(ri: np.ndarray, fs: int) -> int:
 
     Parameters
     ----------
-    ri : np.ndarray
-        Respuesta al impulso (array 1D).
-    fs : int
-        Frecuencia de muestreo en Hz.
+    ri : np.ndarray --> Respuesta al impulso (array 1D).
+    
+    fs : int --> Frecuencia de muestreo en Hz.
 
     Returns
     -------
-    int
-        Indice de la muestra donde se estima el punto de truncamiento.
+    int --> Indice de la muestra donde se estima el punto de truncamiento.
 
     Notes
     -----
-    Esta funcion es **opcional** (extra credit).
+    El punto de truncamiento se usa para corregir la integral de Schroeder. Las muestras 
+    despues del punto de truncamiento se reemplazan por la extrapolacion de la recta de 
+    regresion antes de integrar.
 
     References
     ----------
-    .. [1] Lundeby, A. et al. (1995). "Uncertainties of measurements in
-       room acoustics." Acta Acustica.
+    [1] Lundeby, A. et al. (1995). "Uncertainties of measurements in room acoustics." Acta Acustica.
     """
-    raise NotImplementedError("Implementar en Milestone 3 (opcional)")
 
-#prueba
+    # Prevención: evitar ceros absolutos para el cálculo de logaritmos
+    eps = np.finfo(float).eps
+    
+    # Primer Inciso --> Calcular la curva de decaimiento promediada en intervalos.
+
+    # Pasamos la RI a energía (cuadrado)
+    energia = ri ** 2
+    
+    window_ms = 10
+    window_samples = int((window_ms / 1000) * fs)
+    
+    # Agrupamos en bloques y promediamos
+    n_blocks = len(energia) // window_samples
+    if n_blocks == 0:
+        return len(ri), 0.0 # Fallback si la RI es anormalmente corta
+        
+    energia_truncada = energia[:n_blocks * window_samples]
+    energia_bloques = energia_truncada.reshape(n_blocks, window_samples).mean(axis=1)
+    
+    # Convertimos a dB
+    db_bloques = 10 * np.log10(energia_bloques + eps)
+    
+    # Eje de tiempo en muestras para cada bloque (tomamos el centro del bloque)
+    tiempo_bloques = np.arange(n_blocks) * window_samples + (window_samples / 2)
+    
+    # Encontramos el pico máximo para no incluir la subida inicial en la regresión
+    peak_idx = np.argmax(db_bloques)
+
+    # Segundo Inciso --> Estimar el nivel de ruido de fondo (últimos 10%).
+
+    tail_start_idx = int(n_blocks * 0.9)
+    if tail_start_idx <= peak_idx:
+        tail_start_idx = n_blocks - 1 # Fallback de seguridad
+        
+    noise_level = np.mean(db_bloques[tail_start_idx:])
+    
+    # Parámetros de iteración
+    max_iter = 10
+    tolerance_db = 0.1
+    slope = 0
+    intercept = 0
+
+    # Quinto Inciso --> Iterar: recalcular el nivel de ruido, el punto de cruce y la regresion hasta convergencia.
+
+    for iteracion in range(max_iter):
+       
+        # Tercer Inciso --> Punto de cruce preliminar (ruido + 10 dB).
+        threshold = noise_level + 10
+        
+        # Buscar el primer bloque que cruza el umbral después del pico
+        cross_idx = peak_idx
+        for j in range(peak_idx, n_blocks):
+            if db_bloques[j] < threshold:
+                cross_idx = j
+                break
+                
+        # Si no hay suficiente caída, abortamos la iteración
+        if cross_idx == peak_idx or cross_idx - peak_idx < 3:
+            break
+            
+        # Cuarto Inciso --> Realizar regresión lineal desde el pico hasta el punto de cruce preliminar
+        x_reg = tiempo_bloques[peak_idx:cross_idx]
+        y_reg = db_bloques[peak_idx:cross_idx]
+        
+        # Ajuste polinómico de grado 1 (recta: y = mx + b)
+        slope, intercept = np.polyfit(x_reg, y_reg, 1)
+        
+        # Si la pendiente es positiva, algo falló (no es un decaimiento)
+        if slope >= 0:
+            break
+            
+        # Encontrar dónde la nueva recta cruza el ruido actual (en muestras)
+        cross_x_samples = (noise_level - intercept) / slope
+        
+        # Recalcular el nivel de ruido usando un margen de seguridad después del cruce
+        # (ej. 10% de la longitud restante o un valor fijo, aquí usamos el 10% del total como margen)
+        margin_samples = int(0.1 * len(ri))
+        new_tail_start_samples = int(cross_x_samples + margin_samples)
+        new_tail_start_block = new_tail_start_samples // window_samples
+        
+        # Asegurar que no nos pasamos de los límites del arreglo
+        if new_tail_start_block >= n_blocks:
+            new_tail_start_block = int(n_blocks * 0.9)
+            
+        new_noise_level = np.mean(db_bloques[new_tail_start_block:])
+        
+        # Verificar convergencia
+        if abs(new_noise_level - noise_level) < tolerance_db:
+            noise_level = new_noise_level
+            break
+            
+        noise_level = new_noise_level
+
+    # Sexto Inciso --> El punto de truncamiento final.
+
+    if slope < 0:
+        trunc_sample = int((noise_level - intercept) / slope)
+    else:
+        # Fallback si no hubo un decaimiento claro (señal con bajísimo SNR)
+        trunc_sample = len(ri)
+        
+    # Clamping: Asegurarnos de que el índice devuelto sea válido para el array original
+    trunc_sample = max(0, min(trunc_sample, len(ri) - 1))
+    
+    return trunc_sample, float(noise_level)
