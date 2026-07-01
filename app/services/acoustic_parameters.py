@@ -101,7 +101,7 @@ def regresion_lineal(x: np.ndarray, y: np.ndarray) -> tuple[float, float]:
     ordenada : float
         Ordenada al origen de la recta ajustada (b).
     """
-     # Utilizamos np.polyfit de NumPy.
+    # Utilizamos np.polyfit de NumPy.
     # El '1' indica que queremos ajustar un polinomio de grado 1 (una línea recta: y = mx + b).
     # Esta función aplica automáticamente el método de mínimos cuadrados.
     coeficientes = np.polyfit(x, y, 1)
@@ -135,88 +135,7 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
     .. [1] ISO 3382-1:2009. "Acoustics -- Measurement of room acoustic
        parameters -- Part 1: Performance spaces."
     """
-    
-    # Frecuencias centrales típicas de bandas de octava (en Hz)
-    frecuencias_centrales = [125.0, 250.0, 500.0, 1000.0, 2000.0, 4000.0]
-    
-    # Estructura del diccionario de salida tal como requiere la firma
-    resultados = {
-        'EDT': {}, 'T10': {}, 'T20': {}, 'T30': {}, 'D50': {}, 'C80': {}
-    }
-
-    # Bucle principal por cada banda de frecuencia
-    for fc in frecuencias_centrales:
-        # --- 0. Filtrado ---
-        # Aquí aplicarías tu banco de filtros (ej. scipy.signal.sosfiltfilt)
-        # ri_banda = aplicar_filtro_octava(ri, fs, fc) 
-        
-        # Para mantener el ejemplo enfocado en la matemática de la imagen, 
-        # asignamos 'ri' directo. En tu versión final, usá 'ri_banda'.
-        ri_banda = ri 
-        
-        # --- 1. Cálculos de Energía Temprana y Tardía ---
-        ri_sq = ri_banda ** 2
-        energia_total = np.sum(ri_sq)
-        
-        # D50 (Definición): Primeros 50 ms
-        N50 = int(0.050 * fs)
-        energia_50 = np.sum(ri_sq[:N50])
-        resultados['D50'][fc] = (energia_50 / energia_total) * 100 if energia_total > 0 else 0.0
-        
-        # C80 (Claridad): Primeros 80 ms vs el resto
-        N80 = int(0.080 * fs)
-        energia_80 = np.sum(ri_sq[:N80])
-        energia_tardia_80 = np.sum(ri_sq[N80:])
-        
-        if energia_80 > 0 and energia_tardia_80 > 0:
-            resultados['C80'][fc] = 10 * np.log10(energia_80 / energia_tardia_80)
-        else:
-            resultados['C80'][fc] = None # Manejo seguro por si la señal es muy corta
-
-        # --- 2. Curva de Schroeder ---
-        # Integración hacia atrás: suma acumulada del arreglo invertido y lo volvemos a invertir
-        schroeder = np.cumsum(ri_sq[::-1])[::-1]
-        
-        # Reemplazamos los ceros por un valor minúsculo (eps) para que el log10 no tire error
-        schroeder = np.where(schroeder == 0, np.finfo(float).eps, schroeder)
-        schroeder_db = 10 * np.log10(schroeder / np.max(schroeder))
-        
-        # Vector de tiempo
-        t = np.arange(len(ri_banda)) / fs
-        
-        # --- 3. Decaimientos y Regresiones Lineales ---
-        # Función auxiliar para encontrar el índice (muestra) donde la curva corta ciertos dB
-        def find_idx(array, value):
-            return (np.abs(array - value)).argmin()
-            
-        # Puntos de corte exigidos por la teoría
-        idx_0 = find_idx(schroeder_db, 0)
-        idx_m5 = find_idx(schroeder_db, -5)
-        idx_m10 = find_idx(schroeder_db, -10)
-        idx_m15 = find_idx(schroeder_db, -15)
-        idx_m25 = find_idx(schroeder_db, -25)
-        idx_m35 = find_idx(schroeder_db, -35)
-        
-        # Función para calcular la pendiente 'm' y extrapolar a -60 dB
-        def calcular_tx(idx_start, idx_end):
-            if idx_end <= idx_start or (idx_end - idx_start) < 2:
-                return None # Previene errores si la curva cae muy de golpe (mala SNR)
-            
-            t_slice = t[idx_start:idx_end]
-            db_slice = schroeder_db[idx_start:idx_end]
-            
-            # np.polyfit(x, y, grado) devuelve [pendiente, ordenada_al_origen]
-            m, _ = np.polyfit(t_slice, db_slice, 1)
-            
-            return -60.0 / m if m != 0 else None
-
-        # Asignación final extrapolada a -60dB según la fórmula de tus apuntes
-        resultados['EDT'][fc] = calcular_tx(idx_0, idx_m10)
-        resultados['T10'][fc] = calcular_tx(idx_m5, idx_m15)
-        resultados['T20'][fc] = calcular_tx(idx_m5, idx_m25)
-        resultados['T30'][fc] = calcular_tx(idx_m5, idx_m35)
-
-    return resultados
+    raise NotImplementedError("Implementar en Milestone 3")
 
 
 def metodo_lundeby(ri: np.ndarray, fs: int) -> int:
