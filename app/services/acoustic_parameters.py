@@ -101,7 +101,18 @@ def regresion_lineal(x: np.ndarray, y: np.ndarray) -> tuple[float, float]:
     ordenada : float
         Ordenada al origen de la recta ajustada (b).
     """
-    raise NotImplementedError("Implementar en Milestone 3")
+     # Utilizamos np.polyfit de NumPy.
+    # El '1' indica que queremos ajustar un polinomio de grado 1 (una línea recta: y = mx + b).
+    # Esta función aplica automáticamente el método de mínimos cuadrados.
+    coeficientes = np.polyfit(x, y, 1)
+    
+    # polyfit devuelve un arreglo con los coeficientes de mayor a menor grado.
+    # El índice 0 es 'm' (la pendiente) y el índice 1 es 'b' (la ordenada al origen).
+    # Los forzamos a tipo float nativo de Python para cumplir exactamente con el Type Hint de la firma.
+    pendiente = float(coeficientes[0])
+    ordenada = float(coeficientes[1])
+    
+    return pendiente, ordenada
 
 
 def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
