@@ -13,7 +13,7 @@ from app.routers import filters, health, signals, utils
 app = FastAPI(
     title="RIR-API",
     description="API para procesamiento y analisis de respuestas al impulso segun ISO 3382.",
-    version="0.1.0",
+    version="0.2.0",
 )
 
 # Routers
