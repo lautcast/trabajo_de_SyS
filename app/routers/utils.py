@@ -5,19 +5,20 @@ import io
 import numpy as np
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field
 from scipy.io import wavfile
 
-from app.services.signal_utils import cargar_audio, sintetizar_ri
+from app.services.signal_utils import a_escala_log, cargar_audio, sintetizar_ri
 
 router = APIRouter()
 
 # router.get para la funcion sintetizar_ri.
 
 from fastapi import APIRouter
-from pydantic import BaseModel, Field
 
 # Asumo que tu router ya está definido arriba
 # router = APIRouter()
+
 
 # 1. Definimos el modelo de datos que el usuario enviará en el body del POST
 class SintetizarRIRequest(BaseModel):
@@ -31,9 +32,9 @@ class SintetizarRIRequest(BaseModel):
                 "500.0": 1.5,
                 "1000.0": 1.2,
                 "2000.0": 1.0,
-                "4000.0": 0.8
+                "4000.0": 0.8,
             }
-        }
+        },
     )
     fs: int = Field(default=44100, gt=0, description="Frecuencia de muestreo en Hz")
     duracion: float = Field(default=2.0, gt=0, le=10.0, description="Duración total en segundos")
@@ -67,8 +68,11 @@ def post_sintetizar_ri(request: SintetizarRIRequest):
     return StreamingResponse(
         buffer,
         media_type="audio/wav",
-        headers={"Content-Disposition": f"attachment; filename=ri_sintetizada_{request.duracion}s.wav"}
+        headers={
+            "Content-Disposition": f"attachment; filename=ri_sintetizada_{request.duracion}s.wav"
+        },
     )
+
 
 import os
 import shutil
@@ -79,8 +83,11 @@ from fastapi import APIRouter, File, HTTPException, UploadFile
 
 # router = APIRouter()
 
+
 @router.post("/cargar-audio", summary="Subir y analizar archivo de audio")
-async def post_cargar_audio(archivo: UploadFile = File(..., description="Archivo de audio (.wav o .flac)")):
+async def post_cargar_audio(
+    archivo: UploadFile = File(..., description="Archivo de audio (.wav o .flac)"),
+):
     """
     Recibe un archivo de audio del usuario, lo carga usando la función interna y devuelve su información (metadata).
     """
@@ -90,8 +97,10 @@ async def post_cargar_audio(archivo: UploadFile = File(..., description="Archivo
     nombre_archivo = archivo.filename or ""
     extension = Path(nombre_archivo).suffix.lower()
 
-    if extension not in ['.wav', '.flac']:
-        raise HTTPException(status_code=400, detail="Formato no soportado. Solo se admiten .wav y .flac.")
+    if extension not in [".wav", ".flac"]:
+        raise HTTPException(
+            status_code=400, detail="Formato no soportado. Solo se admiten .wav y .flac."
+        )
 
     # 2. Crear un archivo temporal en el servidor para guardar el audio subido
     # Usamos delete=False para que no se borre antes de que sf.read termine de leerlo
@@ -125,8 +134,8 @@ async def post_cargar_audio(archivo: UploadFile = File(..., description="Archivo
                 "canales": canales,
                 "total_muestras": muestras,
                 "duracion_segundos": round(duracion_segundos, 3),
-                "forma_arreglo": senal.shape
-            }
+                "forma_arreglo": senal.shape,
+            },
         }
 
     except ValueError as e:
@@ -142,3 +151,47 @@ async def post_cargar_audio(archivo: UploadFile = File(..., description="Archivo
         # Esto se ejecuta sin importar si hubo un error o fue un éxito
         if os.path.exists(ruta_temporal):
             os.remove(ruta_temporal)
+
+
+from pydantic import BaseModel, Field
+
+
+#  MODELOS DE DATOS (PYDANTIC)
+class LogScaleRequest(BaseModel):
+    signal_in: list[float] = Field(
+        ..., description="Arreglo de la señal de audio lineal (amplitud)"
+    )
+
+
+class LogScaleResponse(BaseModel):
+    signal_out: list[float] = Field(
+        ..., description="Arreglo de la señal convertida a escala logarítmica (dB)"
+    )
+
+
+# ROUTER (Endpoint de Utils)
+
+router = APIRouter(prefix="/api/v1/utils", tags=["Utils"])
+
+
+@router.post("/log-scale", response_model=LogScaleResponse)
+def convert_to_log_scale(request: LogScaleRequest):
+    """
+    Conversión a Escala Logarítmica:
+    Recibe una señal de audio en valores lineales, calcula su valor absoluto,
+    la normaliza al máximo y la convierte a decibeles (dB) aplicando un piso
+    de ruido de -120 dB.
+    """
+    # 1. Transformar JSON web (List) a matemática pura (NumPy Array)
+    senal_numpy = np.array(request.signal_in, dtype=np.float64)
+
+    try:
+        # 2. Ejecutar tu función
+        senal_db = a_escala_log(signal=senal_numpy)
+
+        # 3. Devolver el resultado transformado a lista estándar
+        return LogScaleResponse(signal_out=senal_db.tolist())
+
+    except Exception as e:
+        # Por si ocurre algún error matemático imprevisto
+        raise HTTPException(status_code=500, detail=f"Error en la conversión a dB: {str(e)}")
