@@ -336,25 +336,27 @@ def metodo_lundeby(ri: np.ndarray, fs: int) -> int:
     
     # Primer Inciso --> Calcular la curva de decaimiento promediada en intervalos.
 
-    # Pasamos la RI a energía (cuadrado)
-    energia = ri ** 2
-    
+    # 1. Definimos el tamaño de la ventana en muestras (ej. 10 ms)
     window_ms = 10
-    window_samples = int((window_ms / 1000) * fs)
+    ventana_muestras = int((window_ms / 1000) * fs)
     
-    # Agrupamos en bloques y promediamos
-    n_blocks = len(energia) // window_samples
-    if n_blocks == 0:
-        return len(ri), 0.0 # Fallback si la RI es anormalmente corta
-        
-    energia_truncada = energia[:n_blocks * window_samples]
-    energia_bloques = energia_truncada.reshape(n_blocks, window_samples).mean(axis=1)
+    # Esto devuelve la energía suavizada de tamaño completo
+
+    energia_suavizada_completa = suavizar_signal(ri, ventana=ventana_muestras)
     
-    # Convertimos a dB
+    # 3. Submuestreo (Diezmado) para obtener bloques discretos
+    # Tomamos un valor cada 'ventana_muestras' saltos
+
+    energia_bloques = energia_suavizada_completa[::ventana_muestras]
+    
+    # 4. Pasamos a dB (igual que antes)
+
     db_bloques = 10 * np.log10(energia_bloques + eps)
     
-    # Eje de tiempo en muestras para cada bloque (tomamos el centro del bloque)
-    tiempo_bloques = np.arange(n_blocks) * window_samples + (window_samples / 2)
+    # Eje de tiempo en muestras para cada bloque
+
+    n_blocks = len(db_bloques)
+    tiempo_bloques = np.arange(n_blocks) * ventana_muestras + (ventana_muestras / 2)
     
     # Encontramos el pico máximo para no incluir la subida inicial en la regresión
     peak_idx = np.argmax(db_bloques)
@@ -409,7 +411,7 @@ def metodo_lundeby(ri: np.ndarray, fs: int) -> int:
         # (ej. 10% de la longitud restante o un valor fijo, aquí usamos el 10% del total como margen)
         margin_samples = int(0.1 * len(ri))
         new_tail_start_samples = int(cross_x_samples + margin_samples)
-        new_tail_start_block = new_tail_start_samples // window_samples
+        new_tail_start_block = new_tail_start_samples // ventana_muestras
         
         # Asegurar que no nos pasamos de los límites del arreglo
         if new_tail_start_block >= n_blocks:
