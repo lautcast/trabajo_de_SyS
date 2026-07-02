@@ -169,13 +169,8 @@ class LogScaleResponse(BaseModel):
     )
 
 
-# ROUTER (Endpoint de Utils)
-
-router = APIRouter(prefix="/api/v1/utils", tags=["Utils"])
-
-
 @router.post("/log-scale", response_model=LogScaleResponse)
-def convert_to_log_scale(request: LogScaleRequest):
+def convertir_a_escala_logartimica(request: LogScaleRequest):
     """
     Conversión a Escala Logarítmica:
     Recibe una señal de audio en valores lineales, calcula su valor absoluto,
