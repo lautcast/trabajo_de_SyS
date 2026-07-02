@@ -1,9 +1,7 @@
 "Milestone 1 a 3: Endpoints de Generación"
 
-from fastapi import APIRouter, Query, Body
-from typing import List
-from app.services.pink_noise import generar_ruido_rosa
 import io
+
 import numpy as np
 from fastapi import APIRouter, Query
 from fastapi.responses import StreamingResponse
@@ -11,7 +9,6 @@ from scipy.io import wavfile
 
 from app.services.pink_noise import generar_ruido_rosa
 from app.services.sine_sweep import generar_sine_sweep
-from app.services.signal_utils import sintetizar_ri
 
 router = APIRouter()
 
@@ -94,7 +91,7 @@ def get_sine_sweep(
     filename = f"sine_sweep-{int(f1)}_Hz_a_{int(f2)}_Hz-{duracion}_seg.wav"
 
     return StreamingResponse(buffer, media_type="audio/wav", headers={"Content-Disposition": f"attachment; filename={filename}"})
-    
+
 
 # router.get para la funcion sintetizar_ri.
 

@@ -3,10 +3,12 @@
 Milestone 2: Procesamiento de la respuesta al impulso.
 """
 
+from pathlib import Path
+
 import numpy as np
 import soundfile as sf
-from pathlib import Path
 from scipy import signal
+
 
 def cargar_audio(ruta: str) -> tuple[np.ndarray, int]:
     """Carga un archivo de audio y retorna la senal y la frecuencia de muestreo.
@@ -32,27 +34,27 @@ def cargar_audio(ruta: str) -> tuple[np.ndarray, int]:
     ValueError
         Si el formato del archivo no es soportado (no es .wav ni .flac).
     """
-    
+
     # Convertimos la ruta o direccion del archivo a un objeto Path para manejarlo de forma segura
-    
+
     ruta_obj = Path(ruta)
-    
+
     # Verificamos que el archivo realmente exista. Caso contrario, devolvemos un error.
 
     if not ruta_obj.is_file():
         raise FileNotFoundError(f"El archivo no existe en la ruta especificada: {ruta_obj.absolute()}")
-    
+
     # Verificamos la extension (aceptamos .wav y .flac ignorando mayúsculas).
 
     extension = ruta_obj.suffix.lower()
 
     if extension not in ['.wav', '.flac']:
         raise ValueError(f"Formato no soportado: '{extension}'. Solo se admiten archivos .wav y .flac.")
-    
-    # Leemos el archivo. 
+
+    # Leemos el archivo.
     # always_2d=False permite que los archivos mono sean 1D (más fácil de procesar después).
     # dtype='float64' garantiza la normalización automática entre -1 y 1.
-    
+
     try:
         senal, fs = sf.read(file=str(ruta_obj), dtype='float64', always_2d=False)
     except Exception as e:
@@ -65,6 +67,7 @@ def cargar_audio(ruta: str) -> tuple[np.ndarray, int]:
 
 
 from app.services.filter import filtro_octava
+
 
 def sintetizar_ri(t60_por_banda: dict[float, float] = {31.5: 2.4, 63: 2.2 ,125: 2.0, 250: 1.8, 500: 1.5, 1000: 1.2, 2000: 1.0, 4000: 0.8}, fs: int = 48000, duracion: float = 2) -> np.ndarray:
     """
@@ -80,27 +83,27 @@ def sintetizar_ri(t60_por_banda: dict[float, float] = {31.5: 2.4, 63: 2.2 ,125: 
     -------
     np.ndarray --> Respuesta al impulso sintetizada y normalizada.
     """
-    
+
     # Calculamos la cantidad total de muestras y creamos el vector de tiempo (t).
 
     total_muestras = int(fs * duracion)
-    
+
     t = np.arange(total_muestras)/ fs
-    
+
     # Inicializamos un arreglo vacío de ceros donde iremos sumando cada banda.
 
     ri_total = np.zeros_like(t)
-    
+
     # Fabricamos un bucle for que aplique el filtro de octava por banda.
 
     for freq_central, t60 in t60_por_banda.items():
 
         # Generamos un ruido blanco con la funcion np.random.randn.
-        
+
         ruido_blanco = np.random.randn(total_muestras)
-        
+
         # Filtramos con filtro pasa-banda centrado en la frecuencia central.
-   
+
         ruido_filtrado = filtro_octava(ruido_blanco, freq_central, fs)
 
         # Fabricamos la exponencial decreciente.
@@ -112,21 +115,21 @@ def sintetizar_ri(t60_por_banda: dict[float, float] = {31.5: 2.4, 63: 2.2 ,125: 
         # Multiplicamos la exponencial con la envolvente de ruido blanco gaussiano.
 
         ri_para_freq_central = ruido_filtrado * exponencial
-        
+
         # Sumamos todas las componentes filtradas en el arreglo hecho anteriormente.
 
         ri_total += ri_para_freq_central
-        
+
     # Normalizamos la señal resultante, buscando el pico máximo absoluto y dividiendo todo por ese valor.
-    # Prevenimos la división por cero. 
+    # Prevenimos la división por cero.
 
     valor_maximo = np.max(np.abs(ri_total))
-    
+
     if valor_maximo > 0:
 
         ri_total_normalizado = ri_total / valor_maximo
-    
-    else: 
+
+    else:
 
         ri_total_normalizado = ri_total
 
@@ -155,7 +158,7 @@ def obtener_ri_desde_sweep(grabacion: np.ndarray, filtro_inverso: np.ndarray) ->
     # Realizamos la convolución entre el filtro inverso del sine sweep y la grabacion del sine sweep en el recinto.
 
     ri = signal.fftconvolve(grabacion, filtro_inverso, mode='full')
-    
+
     # Buscamos el índice donde ocurre el valor máximo absoluto.
 
     indice_max = np.argmax(np.abs(ri))
@@ -163,13 +166,13 @@ def obtener_ri_desde_sweep(grabacion: np.ndarray, filtro_inverso: np.ndarray) ->
     # Buscamos cuál es la amplitud máxima de la señal en el índice máximo.
 
     pico_maximo = np.abs(ri[indice_max])
-    
+
     # Calculamos el valor RMS de amplitud a partir del valor máximo.
 
     valor_rms = pico_maximo/np.sqrt(2)
 
     # Ahora buscamos los indices donde la amplitud es menor que el valor RMS,
-    # desde el indice 0 hasta el índice con valor de amplitud máximo. 
+    # desde el indice 0 hasta el índice con valor de amplitud máximo.
 
     indices_rms = np.where(np.abs(ri[:indice_max]) < valor_rms)[0]
 
@@ -192,7 +195,7 @@ def obtener_ri_desde_sweep(grabacion: np.ndarray, filtro_inverso: np.ndarray) ->
     # Pedimos que la respuesta al impulso comience en donde estipulamos antes.
 
     ri_recortado = ri[inicio:]
-    
+
     # Dividimos todo el array por el valor máximo absoluto para que quede entre -1 y 1.
     # Tambien prevenimos la división por cero en el caso de señal nula.
 
