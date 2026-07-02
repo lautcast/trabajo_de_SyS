@@ -5,6 +5,7 @@ Milestone 3: Analisis de parametros acusticos.
 
 import numpy as np
 from scipy.signal import hilbert
+from app.services.filter import filtro_octava
 
 def suavizar_signal(signal: np.ndarray, ventana: int|str = 'hilbert') -> np.ndarray:
     """Aplica un suavizado por media movil a la senal.
@@ -26,7 +27,7 @@ def suavizar_signal(signal: np.ndarray, ventana: int|str = 'hilbert') -> np.ndar
 
     if isinstance(ventana, int) and ventana > 0:
         
-        # Trabajamos con la energía.
+        # Trabajamos con la energía, elevando al cuadrado la señal.
         
         energia = signal ** 2
         
@@ -34,7 +35,7 @@ def suavizar_signal(signal: np.ndarray, ventana: int|str = 'hilbert') -> np.ndar
 
         kernel = np.ones(ventana) / ventana
         
-        # Aplicamos la convolución para deslizar la ventana rápidamente.
+        # Aplicamos la convolución para deslizar la ventana.
         # El mode='same' nos asegura que el arreglo de salida tenga el mismo tamaño que la entrada.
 
         senal_suavizada = np.convolve(energia, kernel, mode='same')
@@ -45,11 +46,15 @@ def suavizar_signal(signal: np.ndarray, ventana: int|str = 'hilbert') -> np.ndar
 
     elif ventana == 'hilbert':
         
+        # Aplicamos la funcion signal.hilbert() de scipy para obtener la señal analítica
+        # que es igual a la suma de la señal real con la transformada de Hilbert de la misma. 
+
         analitica = hilbert(signal)
+
+        # Para calcular la envolvente de la señal real, calculamos la magnitud de la señal analítica
+
         envolvente = np.abs(analitica)
         
-        # Nota: Hilbert devuelve amplitud. Si los pasos posteriores requieren 
-        # estrictamente energía, puedes devolver envolvente**2
         return envolvente
         
     else:
@@ -61,13 +66,11 @@ def integral_schroeder(ri: np.ndarray) -> np.ndarray:
 
     Parameters
     ----------
-    ri : np.ndarray
-        Respuesta al impulso (array 1D).
+    ri : np.ndarray --> Respuesta al impulso (array 1D).
 
     Returns
     -------
-    np.ndarray
-        Curva de decaimiento energetico (EDC), normalizada.
+    np.ndarray --> Curva de decaimiento energetico (EDC), normalizada.
 
     References
     ----------
@@ -75,52 +78,90 @@ def integral_schroeder(ri: np.ndarray) -> np.ndarray:
        time." The Journal of the Acoustical Society of America.
     """
     
-    # 1. Elevamos la señal al cuadrado para obtener la energía de cada muestra.
+    # Elevamos la señal al cuadrado para obtener la energía de cada muestra.
+    
     energia = ri ** 2
     
-    # 2. Aplicamos la integral hacia atrás. 
-    # energia[::-1] da vuelta el arreglo.
-    # np.cumsum() hace la suma acumulativa (la integral discreta).
-    # [::-1] al final lo vuelve a poner en el orden cronológico correcto.
-    edc = np.cumsum(energia[::-1])[::-1]
+    # Damos vuelta el arreglo para calcular la integral discreta.
+
+    energia_inversa = energia[::-1]
+
+    # Llevamos a cabo la integral discreta con la función np.cumsum().
+    # El parámetro [::-1] al final lo vuelve a poner en el orden cronológico correcto.
+
+    edc = np.cumsum(energia_inversa)[::-1]
     
-    # 3. Normalizamos la curva. 
-    # Como es una suma que va bajando, el valor máximo siempre está en el índice 0.
-    # Al dividir todo por ese máximo, la curva arrancará exactamente en 1.0.
-    edc_normalizada = edc / np.max(edc)
+    # Pasamos a la EDC a escala logarítmica, utilizando un valor muy cercano a cero al que llamnamos épsilon
+    # para evitar la división por cero.
+
+    epsilon = np.finfo(float).eps
+
+    edc_db = 10 * np.log10(edc / edc[0] + epsilon)
+
     
-    return edc_normalizada
+    return edc_db
 
 
-def regresion_lineal(x: np.ndarray, y: np.ndarray) -> tuple[float, float]:
-    """Calcula la regresion lineal por minimos cuadrados.
+def regresion_lineal(x: np.ndarray, y: np.ndarray) -> tuple[float, float, float]:
+    """
+    Calcula la regresion lineal por minimos cuadrados implementando las fórmulas manualmente.
 
     Parameters
     ----------
-    x : np.ndarray
-        Variable independiente (array 1D).
-    y : np.ndarray
-        Variable dependiente (array 1D).
+    x : np.ndarray --> Variable independiente.
+    
+    y : np.ndarray --> Variable dependiente.
 
     Returns
     -------
-    pendiente : float
-        Pendiente de la recta ajustada (m).
-    ordenada : float
-        Ordenada al origen de la recta ajustada (b).
+    tuple[float, float, float]
+        (pendiente, ordenada_al_origen, r_cuadrado)
+        pendiente en dB/s, ordenada en dB, coeficiente de determinacion.
     """
-    # Utilizamos np.polyfit de NumPy.
-    # El '1' indica que queremos ajustar un polinomio de grado 1 (una línea recta: y = mx + b).
-    # Esta función aplica automáticamente el método de mínimos cuadrados.
-    coeficientes = np.polyfit(x, y, 1)
+    # Primero calculamos la cantidad total de muestras y la guardamos en N.
+
+    N = len(x)
     
-    # polyfit devuelve un arreglo con los coeficientes de mayor a menor grado.
-    # El índice 0 es 'm' (la pendiente) y el índice 1 es 'b' (la ordenada al origen).
-    # Los forzamos a tipo float nativo de Python para cumplir exactamente con el Type Hint de la firma.
-    pendiente = float(coeficientes[0])
-    ordenada = float(coeficientes[1])
+    # Ahora, calculamos las sumatorias que neceistamos para calcular la pendiente 'm' y la ordenada 'b'.
+    # Utilizamos np.sum() para sumar todos los elementos del array.
     
-    return pendiente, ordenada
+    sum_x = np.sum(x)
+    sum_y = np.sum(y)
+    sum_xy = np.sum(x * y)
+    sum_x2 = np.sum(x**2)
+    
+    # Luego aplicamos las fórmulas para la pendiente y la ordenada.
+    
+    m = (N * sum_xy - sum_x * sum_y) / (N * sum_x2 - (sum_x)**2)
+    b = (sum_y - m * sum_x) / N
+    
+    # Ahora calculamos el coeficiente de determinación (R^2):
+
+    # Primero obtenemos los valores predichos con la regresión lineal para cada x.
+    
+    y_pred = m * x + b
+
+    # Después obtenemos el promedio de los valores de y.
+
+    y_mean = np.mean(y)
+    
+    # Finalmente, aplicamos la ecuación para obtener R^2, calculando primero las sumatorias que la componen.
+
+    # Suma de errores cuadráticos.
+
+    ss_res = np.sum((y - y_pred)**2) 
+    
+    # Suma total de cuadrados.
+    
+    ss_tot = np.sum((y - y_mean)**2) 
+    
+    # Cálculo de R.
+
+    r_cuadrado = 1 - (ss_res / ss_tot)
+    
+    # Pedimos que los valores de m y b sean del tipo float, como indica la firma.
+
+    return float(m), float(b), float(r_cuadrado)
 
 
 def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
@@ -128,102 +169,140 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
 
     Parameters
     ----------
-    ri : np.ndarray
-        Respuesta al impulso (array 1D).
-    fs : int
-        Frecuencia de muestreo en Hz.
+    ri : np.ndarray --> Respuesta al impulso (array 1D).
+    fs : int --> Frecuencia de muestreo en Hz.
 
     Returns
     -------
-    dict
-        Diccionario con los parametros acusticos por banda.
+    dict --> Diccionario con los parametros acusticos por banda.
 
     References
     ----------
-    .. [1] ISO 3382-1:2009. "Acoustics -- Measurement of room acoustic
-       parameters -- Part 1: Performance spaces."
+    .. [1] ISO 3382-1:2009. "Acoustics -- Measurement of room acoustic parameters -- Part 1: Performance spaces."
     """
 
     # Frecuencias centrales normalizadas según la norma IEC 61620
     
     frecuencias_centrales = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
     
-    # Creamos el diccionario valores vacíos y claves correspondientes a los parámetrosa acústicos.
+    # Creamos el diccionario con claves correspondientes a los parámetrosa acústicos y valores vacíos
 
     resultados = {'EDT': {}, 'T10': {}, 'T20': {}, 'T30': {}, 'D50': {}, 'C80': {}}
 
     # Hacemos un bucle principal por cada frecuencia.
 
-    for fc in frecuencias_centrales:
-        # --- 0. Filtrado ---
-        # Aquí aplicarías tu banco de filtros (ej. scipy.signal.sosfiltfilt)
-        # ri_banda = aplicar_filtro_octava(ri, fs, fc) 
-        
-        # Para mantener el ejemplo enfocado en la matemática de la imagen, 
-        # asignamos 'ri' directo. En tu versión final, usá 'ri_banda'.
-        ri_banda = ri 
-        
-        # --- 1. Cálculos de Energía Temprana y Tardía ---
-        ri_sq = ri_banda ** 2
-        energia_total = np.sum(ri_sq)
-        
-        # D50 (Definición): Primeros 50 ms
-        N50 = int(0.050 * fs)
-        energia_50 = np.sum(ri_sq[:N50])
-        resultados['D50'][fc] = (energia_50 / energia_total) * 100 if energia_total > 0 else 0.0
-        
-        # C80 (Claridad): Primeros 80 ms vs el resto
-        N80 = int(0.080 * fs)
-        energia_80 = np.sum(ri_sq[:N80])
-        energia_tardia_80 = np.sum(ri_sq[N80:])
-        
-        if energia_80 > 0 and energia_tardia_80 > 0:
-            resultados['C80'][fc] = 10 * np.log10(energia_80 / energia_tardia_80)
-        else:
-            resultados['C80'][fc] = None # Manejo seguro por si la señal es muy corta
+    for f in frecuencias_centrales:
 
-        # --- 2. Curva de Schroeder ---
-        # Integración hacia atrás: suma acumulada del arreglo invertido y lo volvemos a invertir
-        schroeder = np.cumsum(ri_sq[::-1])[::-1]
+        # Filatramos la RI en la banda de la frecuencia central correspondiente.
+
+        ri_banda = filtro_octava(ri, fc=f, fs=fs, grado = 4)
+
+        # Calculamos la energía total a partir de la energía instantánea de cada muestra.
         
-        # Reemplazamos los ceros por un valor minúsculo (eps) para que el log10 no tire error
-        schroeder = np.where(schroeder == 0, np.finfo(float).eps, schroeder)
-        schroeder_db = 10 * np.log10(schroeder / np.max(schroeder))
+        ri_banda_cuadrado = ri_banda ** 2
+        energia_total = np.sum(ri_banda_cuadrado)
+
+        "-------------------------------------------------------------------------------------------------"
+
+        # D50 (Definición): Es la relacion entre la energia en los primeros 50 ms y la energia total.
+
+        # Multiplicamos los 50 ms por la frecuencia de muestreo para obtener 
+        # la cantidad de muestras en ese tiempo.
+
+        N50 = int(0.050 * fs)
         
-        # Vector de tiempo
+        # Calculamos la energía total en los primeros 50 ms.
+
+        energia_50 = np.sum(ri_banda_cuadrado[:N50])
+
+        # En la clave 'D50' del diccionario resultados colocamos el valor de este
+        # parámetro para la freucencia central f.
+
+        resultados['D50'][f] = (energia_50 / energia_total) * 100 if energia_total > 0 else 0.0
+        
+        "-------------------------------------------------------------------------------------------------"
+
+        # C80 (Claridad): Es la relación entre la energía de los primeros 80 ms, y
+        # el resto de la energía de la RI.
+
+        # Primero calculamos la cantidad de muestras contenidas en 80 ms.
+
+        N80 = int(0.080 * fs)
+
+        # Luego, en 'energia_80' guardamos toda la energía de esos primeros 80 ms, mientras que
+        # en 'energia_tardia_80' guardamos toda la energía del resto de la RI sin los primeros
+        # 80 ms.
+
+        energia_80 = np.sum(ri_banda_cuadrado[:N80])
+        energia_tardia_80 = np.sum(ri_banda_cuadrado[N80:])
+        
+        # Finalmente, calculamos la relacion para hallar C80 y guardamos en resultados. 
+        # Prevenimos la división por cero teniendo en cuenta que la señal puede ser corta.
+
+        if energia_80 > 0 and energia_tardia_80 > 0:
+            resultados['C80'][f] = 10 * np.log10(energia_80 / energia_tardia_80)
+        else:
+            resultados['C80'][f] = None
+
+        "-------------------------------------------------------------------------------------------------"
+
+        # Ahora, calculamos el EDT y los Tiempos de Reverberación.
+
+        # Primero usamos la función de integral_schroeder() que definimos anteriormente para
+        # obtener la envolvente de la RI filtrada en la banda de la frecuencia f correspondiente.
+
+        envolvente_ri_banda = integral_schroeder(ri_banda)
+
+        # Creamos un vector de tiempo con el mismo tamaño que la RI. 
+
         t = np.arange(len(ri_banda)) / fs
         
-        # --- 3. Decaimientos y Regresiones Lineales ---
-        # Función auxiliar para encontrar el índice (muestra) donde la curva corta ciertos dB
-        def find_idx(array, value):
+        "------------------------------"
+
+        # Hacemos una función auxiliar para encontrar el índice (muestra) donde 
+        # la curva corta ciertos dB que nos interesan para hallar los parámetros mencionados.
+
+        def buscar_indice(array, value) -> int:
+            """
+            Acciones
+            --------
+            La función devuelve el índice correspondiente al valor del array más cercano a value.
+
+            """
             return (np.abs(array - value)).argmin()
             
-        # Puntos de corte exigidos por la teoría
-        idx_0 = find_idx(schroeder_db, 0)
-        idx_m5 = find_idx(schroeder_db, -5)
-        idx_m10 = find_idx(schroeder_db, -10)
-        idx_m15 = find_idx(schroeder_db, -15)
-        idx_m25 = find_idx(schroeder_db, -25)
-        idx_m35 = find_idx(schroeder_db, -35)
+        # Con la función buscar_indice(), encontramos los índices de la RI filtrada en
+        # la banda con frecuencia central f donde el valor de dB es el que indica el parámetro
+        # 'value' utilizado en cada uno de los llamados de la funcion.
+
+        indice_0 = buscar_indice(envolvente_ri_banda, 0)
+        indice_5 = buscar_indice(envolvente_ri_banda, -5)
+        indice_10 = buscar_indice(envolvente_ri_banda, -10)
+        indice_15 = buscar_indice(envolvente_ri_banda, -15)
+        indice_25 = buscar_indice(envolvente_ri_banda, -25)
+        indice_35 = buscar_indice(envolvente_ri_banda, -35)
         
         # Función para calcular la pendiente 'm' y extrapolar a -60 dB
-        def calcular_tx(idx_start, idx_end):
-            if idx_end <= idx_start or (idx_end - idx_start) < 2:
+
+        def calcular_tx(indice_inicio, indice_final):
+            if indice_final <= indice_inicio or (indice_final - indice_inicio) < 2:
                 return None # Previene errores si la curva cae muy de golpe (mala SNR)
             
-            t_slice = t[idx_start:idx_end]
-            db_slice = schroeder_db[idx_start:idx_end]
+            tramo_temporal = t[indice_inicio:indice_final]
+            db = envolvente_ri_banda[indice_inicio:indice_final]
+        
+            m, b, R_2 = regresion_lineal(tramo_temporal, db, 1)
             
-            # np.polyfit(x, y, grado) devuelve [pendiente, ordenada_al_origen]
-            m, _ = np.polyfit(t_slice, db_slice, 1)
-            
-            return -60.0 / m if m != 0 else None
+            extrapolacion = (-60.0) / m if m != 0 else None
+
+            return extrapolacion
 
         # Asignación final extrapolada a -60dB según la fórmula de tus apuntes
-        resultados['EDT'][fc] = calcular_tx(idx_0, idx_m10)
-        resultados['T10'][fc] = calcular_tx(idx_m5, idx_m15)
-        resultados['T20'][fc] = calcular_tx(idx_m5, idx_m25)
-        resultados['T30'][fc] = calcular_tx(idx_m5, idx_m35)
+        
+        resultados['EDT'][f] = calcular_tx(indice_0, indice_10)
+        resultados['T10'][f] = calcular_tx(indice_5, indice_15)
+        resultados['T20'][f] = calcular_tx(indice_5, indice_25)
+        resultados['T30'][f] = calcular_tx(indice_5, indice_35)
 
     return resultados
 
