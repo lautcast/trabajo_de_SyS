@@ -1,18 +1,19 @@
 """Tests para los servicios de procesamiento de senales (Milestone 2)."""
 
-from signal import signal
 
 import numpy as np
 import pytest as pytest
-from app.services.signal_utils import a_escala_log, cargar_audio
 from scipy.io import wavfile
-from scipy.signal import butter, filtfilt
-from app.services.signal_utils import sintetizar_ri, obtener_ri_desde_sweep
+from scipy.signal import butter, fftconvolve, filtfilt
+
 from app.routers.signals import generar_sine_sweep
-from scipy.signal import fftconvolve
-from app.services.signal_utils import a_escala_log
-from scipy.signal import freqz
-from app.services.filter import filtro_octava
+from app.services.signal_utils import (
+    a_escala_log,
+    cargar_audio,
+    obtener_ri_desde_sweep,
+    sintetizar_ri,
+)
+
 
 class TestCargarAudio:
     """Tests para la funcion cargar_audio."""
@@ -27,11 +28,11 @@ class TestCargarAudio:
     def test_cargar_audio_wav(self, tmp_path):
         """Verificar carga correcta de archivo WAV."""
 
-        #Se crea la ruta temporta para el archivo de prueba, 
-        
+        #Se crea la ruta temporta para el archivo de prueba,
+
         ruta_dummy = tmp_path / "prueba.wav"
         fs_esperada = 44100
-        
+
         #Se genera una señal dummy con valores aleatorios
         senal_dummy = np.random.randint(-32768, 32767, fs_esperada, dtype=np.int16)
         wavfile.write(ruta_dummy, fs_esperada, senal_dummy)
@@ -52,13 +53,13 @@ class TestCargarAudio:
         ruta_invalida.write_text("Esto es texto, no es un archivo de audio.")
 
         #Al intentar cargar este archivo con la función cargar_audio, indicamos que el formato no es soportado.
-        with pytest.raises(ValueError): 
+        with pytest.raises(ValueError):
             cargar_audio(str(ruta_invalida))
 
     def test_cargar_audio_normalizacion(self, tmp_path):
         """Verificar que la salida esta normalizada entre -1 y 1."""
 
-        #Se crea la ruta temporta para el archivo de prueba, 
+        #Se crea la ruta temporta para el archivo de prueba,
         #Se genera una señal con valores extremos para asegurarnos de que la función de normalización se active.
         ruta_dummy = tmp_path / "prueba_norm.wav"
         fs_esperada = 44100
@@ -94,10 +95,10 @@ class TestAEscalaLog:
         """Verifica que el valor maximo de la salida (Full Scale) es 0 dB."""
         #Se utiliza una señal con valores aleatorios positivos y negativos
         np.random.seed(42) #Con la semilla nos aseguramos que el test sea reproducible
-        x = np.random.uniform(-0.8, 0.8, 100) 
+        x = np.random.uniform(-0.8, 0.8, 100)
 
         #Se indica un pico máximo artificial conocido
-        x[50] = 1.0 
+        x[50] = 1.0
 
         db = a_escala_log(x)
 
@@ -190,7 +191,7 @@ class TestSintesizarRI:
         t60_medido = indice_t60 / fs
 
         #Se Verifica que el T60 medido está dentro del 10% del valor especificado, osea la tolerancia es de 0.2s para un T60 objetivo de 2.0s
-        margen_error = t60_objetivo * 0.10  
+        margen_error = t60_objetivo * 0.10
         assert np.isclose(t60_medido, t60_objetivo, atol=margen_error), \
             f"Fallo: T60 medido = {t60_medido:.2f}s, se esperaba = {t60_objetivo}s"
 
@@ -225,7 +226,7 @@ class TestDeconvolución:
     ri_ideal_recortada = ri_ideal[:longitud_min]
     ri_rec_recortada = ri_recuperada[:longitud_min]
 
-    #np.corrcoef devuelve una matriz de correlación 2x2. 
+    #np.corrcoef devuelve una matriz de correlación 2x2.
     #El valor en la posición [0, 1] es el coeficiente de Pearson cruzado entre ambas señales.
     correlacion = np.corrcoef(ri_ideal_recortada, ri_rec_recortada)[0, 1]
 

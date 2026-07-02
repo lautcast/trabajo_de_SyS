@@ -8,7 +8,7 @@ from scipy import signal
 
 
 def filtro_octava(signal_in: np.ndarray, fc: float, fs: int, orden: int = 4) -> np.ndarray:
-    
+
     """
     Acciones
     --------
@@ -36,7 +36,7 @@ def filtro_octava(signal_in: np.ndarray, fc: float, fs: int, orden: int = 4) -> 
     frec_cent_normalizadas = np.array([31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000])
 
     if fc not in frec_cent_normalizadas:
-        raise ValueError(f"La frecuencia central especificada no se encuentra dentro de la norma IEC 61260")
+        raise ValueError("La frecuencia central especificada no se encuentra dentro de la norma IEC 61260")
 
     # Calculamos las frecuencias de corte inferior y superior para la frecuencia central normalizada.
 

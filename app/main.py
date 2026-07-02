@@ -8,8 +8,7 @@ Uso:
 
 from fastapi import FastAPI
 
-from app.routers import health, signals
-from app.routers import health, utils
+from app.routers import health, signals, utils
 
 app = FastAPI(
     title="RIR-API",

@@ -5,7 +5,9 @@ Milestone 3: Analisis de parametros acusticos.
 
 import numpy as np
 from scipy.signal import hilbert
+
 from app.services.filter import filtro_octava
+
 
 def suavizar_signal(signal: np.ndarray, ventana: int|str = 'hilbert') -> np.ndarray:
     """Aplica un suavizado por media movil a la senal.
@@ -20,43 +22,43 @@ def suavizar_signal(signal: np.ndarray, ventana: int|str = 'hilbert') -> np.ndar
     -------
     np.ndarray --> Senal suavizada, de la misma longitud que ``signal``.
     """
-    
+
     # Dependiendo la ventana escogida por el usuario, se tienen dos opciones.
 
-    # Primera opción.   
+    # Primera opción.
 
     if isinstance(ventana, int) and ventana > 0:
-        
+
         # Trabajamos con la energía, elevando al cuadrado la señal.
-        
+
         energia = signal ** 2
-        
+
         # Creamos el kernel para el promedio.
 
         kernel = np.ones(ventana) / ventana
-        
+
         # Aplicamos la convolución para deslizar la ventana.
         # El mode='same' nos asegura que el arreglo de salida tenga el mismo tamaño que la entrada.
 
         senal_suavizada = np.convolve(energia, kernel, mode='same')
-        
+
         return senal_suavizada
 
     # Segunda opción.
 
     elif ventana == 'hilbert':
-        
+
         # Aplicamos la funcion signal.hilbert() de scipy para obtener la señal analítica
-        # que es igual a la suma de la señal real con la transformada de Hilbert de la misma. 
+        # que es igual a la suma de la señal real con la transformada de Hilbert de la misma.
 
         analitica = hilbert(signal)
 
         # Para calcular la envolvente de la señal real, calculamos la magnitud de la señal analítica
 
         envolvente = np.abs(analitica)
-        
+
         return envolvente
-        
+
     else:
         raise ValueError("El parámetro 'ventana' debe ser 'hilbert' o un entero positivo.")
 
@@ -77,11 +79,11 @@ def integral_schroeder(ri: np.ndarray) -> np.ndarray:
     .. [1] Schroeder, M. R. (1965). "New method of measuring reverberation
        time." The Journal of the Acoustical Society of America.
     """
-    
+
     # Elevamos la señal al cuadrado para obtener la energía de cada muestra.
-    
+
     energia = ri ** 2
-    
+
     # Damos vuelta el arreglo para calcular la integral discreta.
 
     energia_inversa = energia[::-1]
@@ -90,7 +92,7 @@ def integral_schroeder(ri: np.ndarray) -> np.ndarray:
     # El parámetro [::-1] al final lo vuelve a poner en el orden cronológico correcto.
 
     edc = np.cumsum(energia_inversa)[::-1]
-    
+
     # Pasamos a la EDC a escala logarítmica, utilizando un valor muy cercano a cero al que llamnamos épsilon
     # para evitar la división por cero.
 
@@ -98,7 +100,7 @@ def integral_schroeder(ri: np.ndarray) -> np.ndarray:
 
     edc_db = 10 * np.log10(edc / edc[0] + epsilon)
 
-    
+
     return edc_db
 
 
@@ -121,44 +123,44 @@ def regresion_lineal(x: np.ndarray, y: np.ndarray) -> tuple[float, float, float]
     # Primero calculamos la cantidad total de muestras y la guardamos en N.
 
     N = len(x)
-    
+
     # Ahora, calculamos las sumatorias que neceistamos para calcular la pendiente 'm' y la ordenada 'b'.
     # Utilizamos np.sum() para sumar todos los elementos del array.
-    
+
     sum_x = np.sum(x)
     sum_y = np.sum(y)
     sum_xy = np.sum(x * y)
     sum_x2 = np.sum(x**2)
-    
+
     # Luego aplicamos las fórmulas para la pendiente y la ordenada.
-    
+
     m = (N * sum_xy - sum_x * sum_y) / (N * sum_x2 - (sum_x)**2)
     b = (sum_y - m * sum_x) / N
-    
+
     # Ahora calculamos el coeficiente de determinación (R^2):
 
     # Primero obtenemos los valores predichos con la regresión lineal para cada x.
-    
+
     y_pred = m * x + b
 
     # Después obtenemos el promedio de los valores de y.
 
     y_mean = np.mean(y)
-    
+
     # Finalmente, aplicamos la ecuación para obtener R^2, calculando primero las sumatorias que la componen.
 
     # Suma de errores cuadráticos.
 
-    ss_res = np.sum((y - y_pred)**2) 
-    
+    ss_res = np.sum((y - y_pred)**2)
+
     # Suma total de cuadrados.
-    
-    ss_tot = np.sum((y - y_mean)**2) 
-    
+
+    ss_tot = np.sum((y - y_mean)**2)
+
     # Cálculo de R.
 
     r_cuadrado = 1 - (ss_res / ss_tot)
-    
+
     # Pedimos que los valores de m y b sean del tipo float, como indica la firma.
 
     return float(m), float(b), float(r_cuadrado)
@@ -182,9 +184,9 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
     """
 
     # Frecuencias centrales normalizadas según la norma IEC 61620
-    
+
     frecuencias_centrales = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
-    
+
     # Creamos el diccionario con claves correspondientes a los parámetrosa acústicos y valores vacíos
 
     resultados = {'EDT': {}, 'T10': {}, 'T20': {}, 'T30': {}, 'D50': {}, 'C80': {}}
@@ -198,7 +200,7 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
         ri_banda = filtro_octava(ri, fc=f, fs=fs, grado = 4)
 
         # Calculamos la energía total a partir de la energía instantánea de cada muestra.
-        
+
         ri_banda_cuadrado = ri_banda ** 2
         energia_total = np.sum(ri_banda_cuadrado)
 
@@ -206,11 +208,11 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
 
         # D50 (Definición): Es la relacion entre la energia en los primeros 50 ms y la energia total.
 
-        # Multiplicamos los 50 ms por la frecuencia de muestreo para obtener 
+        # Multiplicamos los 50 ms por la frecuencia de muestreo para obtener
         # la cantidad de muestras en ese tiempo.
 
         N50 = int(0.050 * fs)
-        
+
         # Calculamos la energía total en los primeros 50 ms.
 
         energia_50 = np.sum(ri_banda_cuadrado[:N50])
@@ -219,7 +221,7 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
         # parámetro para la freucencia central f.
 
         resultados['D50'][f] = (energia_50 / energia_total) * 100 if energia_total > 0 else 0.0
-        
+
         "-------------------------------------------------------------------------------------------------"
 
         # C80 (Claridad): Es la relación entre la energía de los primeros 80 ms, y
@@ -235,8 +237,8 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
 
         energia_80 = np.sum(ri_banda_cuadrado[:N80])
         energia_tardia_80 = np.sum(ri_banda_cuadrado[N80:])
-        
-        # Finalmente, calculamos la relacion para hallar C80 y guardamos en resultados. 
+
+        # Finalmente, calculamos la relacion para hallar C80 y guardamos en resultados.
         # Prevenimos la división por cero teniendo en cuenta que la señal puede ser corta.
 
         if energia_80 > 0 and energia_tardia_80 > 0:
@@ -253,13 +255,13 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
 
         envolvente_ri_banda = integral_schroeder(ri_banda)
 
-        # Creamos un vector de tiempo con el mismo tamaño que la RI. 
+        # Creamos un vector de tiempo con el mismo tamaño que la RI.
 
         t = np.arange(len(ri_banda)) / fs
-        
+
         "------------------------------"
 
-        # Hacemos una función auxiliar para encontrar el índice (muestra) donde 
+        # Hacemos una función auxiliar para encontrar el índice (muestra) donde
         # la curva corta ciertos dB que nos interesan para hallar los parámetros mencionados.
 
         def buscar_indice(array, value) -> int:
@@ -270,7 +272,7 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
 
             """
             return (np.abs(array - value)).argmin()
-            
+
         # Con la función buscar_indice(), encontramos los índices de la RI filtrada en
         # la banda con frecuencia central f donde el valor de dB es el que indica el parámetro
         # 'value' utilizado en cada uno de los llamados de la funcion.
@@ -281,24 +283,24 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
         indice_15 = buscar_indice(envolvente_ri_banda, -15)
         indice_25 = buscar_indice(envolvente_ri_banda, -25)
         indice_35 = buscar_indice(envolvente_ri_banda, -35)
-        
+
         # Función para calcular la pendiente 'm' y extrapolar a -60 dB
 
         def calcular_tx(indice_inicio, indice_final):
             if indice_final <= indice_inicio or (indice_final - indice_inicio) < 2:
                 return None # Previene errores si la curva cae muy de golpe (mala SNR)
-            
+
             tramo_temporal = t[indice_inicio:indice_final]
             db = envolvente_ri_banda[indice_inicio:indice_final]
-        
+
             m, b, R_2 = regresion_lineal(tramo_temporal, db, 1)
-            
+
             extrapolacion = (-60.0) / m if m != 0 else None
 
             return extrapolacion
 
         # Asignación final extrapolada a -60dB según la fórmula de tus apuntes
-        
+
         resultados['EDT'][f] = calcular_tx(indice_0, indice_10)
         resultados['T10'][f] = calcular_tx(indice_5, indice_15)
         resultados['T20'][f] = calcular_tx(indice_5, indice_25)
@@ -333,31 +335,31 @@ def metodo_lundeby(ri: np.ndarray, fs: int) -> int:
 
     # Prevención: evitar ceros absolutos para el cálculo de logaritmos
     eps = np.finfo(float).eps
-    
+
     # Primer Inciso --> Calcular la curva de decaimiento promediada en intervalos.
 
     # 1. Definimos el tamaño de la ventana en muestras (ej. 10 ms)
     window_ms = 10
     ventana_muestras = int((window_ms / 1000) * fs)
-    
+
     # Esto devuelve la energía suavizada de tamaño completo
 
     energia_suavizada_completa = suavizar_signal(ri, ventana=ventana_muestras)
-    
+
     # 3. Submuestreo (Diezmado) para obtener bloques discretos
     # Tomamos un valor cada 'ventana_muestras' saltos
 
     energia_bloques = energia_suavizada_completa[::ventana_muestras]
-    
+
     # 4. Pasamos a dB (igual que antes)
 
     db_bloques = 10 * np.log10(energia_bloques + eps)
-    
+
     # Eje de tiempo en muestras para cada bloque
 
     n_blocks = len(db_bloques)
     tiempo_bloques = np.arange(n_blocks) * ventana_muestras + (ventana_muestras / 2)
-    
+
     # Encontramos el pico máximo para no incluir la subida inicial en la regresión
     peak_idx = np.argmax(db_bloques)
 
@@ -366,9 +368,9 @@ def metodo_lundeby(ri: np.ndarray, fs: int) -> int:
     tail_start_idx = int(n_blocks * 0.9)
     if tail_start_idx <= peak_idx:
         tail_start_idx = n_blocks - 1 # Fallback de seguridad
-        
+
     noise_level = np.mean(db_bloques[tail_start_idx:])
-    
+
     # Parámetros de iteración
     max_iter = 10
     tolerance_db = 0.1
@@ -378,52 +380,52 @@ def metodo_lundeby(ri: np.ndarray, fs: int) -> int:
     # Quinto Inciso --> Iterar: recalcular el nivel de ruido, el punto de cruce y la regresion hasta convergencia.
 
     for iteracion in range(max_iter):
-       
+
         # Tercer Inciso --> Punto de cruce preliminar (ruido + 10 dB).
         threshold = noise_level + 10
-        
+
         # Buscar el primer bloque que cruza el umbral después del pico
         cross_idx = peak_idx
         for j in range(peak_idx, n_blocks):
             if db_bloques[j] < threshold:
                 cross_idx = j
                 break
-                
+
         # Si no hay suficiente caída, abortamos la iteración
         if cross_idx == peak_idx or cross_idx - peak_idx < 3:
             break
-            
+
         # Cuarto Inciso --> Realizar regresión lineal desde el pico hasta el punto de cruce preliminar
         x_reg = tiempo_bloques[peak_idx:cross_idx]
         y_reg = db_bloques[peak_idx:cross_idx]
-        
+
         # Ajuste polinómico de grado 1 (recta: y = mx + b)
         slope, intercept = np.polyfit(x_reg, y_reg, 1)
-        
+
         # Si la pendiente es positiva, algo falló (no es un decaimiento)
         if slope >= 0:
             break
-            
+
         # Encontrar dónde la nueva recta cruza el ruido actual (en muestras)
         cross_x_samples = (noise_level - intercept) / slope
-        
+
         # Recalcular el nivel de ruido usando un margen de seguridad después del cruce
         # (ej. 10% de la longitud restante o un valor fijo, aquí usamos el 10% del total como margen)
         margin_samples = int(0.1 * len(ri))
         new_tail_start_samples = int(cross_x_samples + margin_samples)
         new_tail_start_block = new_tail_start_samples // ventana_muestras
-        
+
         # Asegurar que no nos pasamos de los límites del arreglo
         if new_tail_start_block >= n_blocks:
             new_tail_start_block = int(n_blocks * 0.9)
-            
+
         new_noise_level = np.mean(db_bloques[new_tail_start_block:])
-        
+
         # Verificar convergencia
         if abs(new_noise_level - noise_level) < tolerance_db:
             noise_level = new_noise_level
             break
-            
+
         noise_level = new_noise_level
 
     # Sexto Inciso --> El punto de truncamiento final.
@@ -433,8 +435,8 @@ def metodo_lundeby(ri: np.ndarray, fs: int) -> int:
     else:
         # Fallback si no hubo un decaimiento claro (señal con bajísimo SNR)
         trunc_sample = len(ri)
-        
+
     # Clamping: Asegurarnos de que el índice devuelto sea válido para el array original
     trunc_sample = max(0, min(trunc_sample, len(ri) - 1))
-    
+
     return trunc_sample, float(noise_level)
