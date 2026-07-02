@@ -33,6 +33,7 @@ class SintetizarRIRequest(BaseModel):
                 "1000.0": 1.2,
                 "2000.0": 1.0,
                 "4000.0": 0.8,
+                "4000.0": 0.8,
             }
         },
     )
@@ -97,6 +98,10 @@ async def post_cargar_audio(
     nombre_archivo = archivo.filename or ""
     extension = Path(nombre_archivo).suffix.lower()
 
+    if extension not in [".wav", ".flac"]:
+        raise HTTPException(
+            status_code=400, detail="Formato no soportado. Solo se admiten .wav y .flac."
+        )
     if extension not in [".wav", ".flac"]:
         raise HTTPException(
             status_code=400, detail="Formato no soportado. Solo se admiten .wav y .flac."
