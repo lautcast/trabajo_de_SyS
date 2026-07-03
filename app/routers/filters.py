@@ -3,7 +3,7 @@
 import numpy as np
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from scipy import signal
+
 from app.services.filter import filtro_octava
 
 

@@ -1,12 +1,10 @@
 import os
 import tempfile
-import numpy as np
-import soundfile as sf
 from pathlib import Path
-from fastapi import APIRouter, HTTPException, File, UploadFile
-from pydantic import BaseModel, Field
-from typing import Dict, Optional
 
+import numpy as np
+from fastapi import APIRouter, File, HTTPException, UploadFile
+from pydantic import BaseModel, Field
 
 from app.services.acoustic_parameters import calcular_parametros_acusticos
 from app.services.signal_utils import cargar_audio
@@ -16,7 +14,7 @@ from app.services.signal_utils import cargar_audio
 class AnalysisResponse(BaseModel):
     mensaje: str = Field(..., description="Estado del análisis")
     frecuencia_muestreo: int
-    parametros_por_banda: Dict[str, Dict[str, Optional[float]]]
+    parametros_por_banda: dict[str, dict[str, float | None]]
 
 
 
@@ -33,7 +31,7 @@ async def analyze_impulse_response_file(file: UploadFile = File(...)):
     # 1. Validamos que el archivo tenga nombre y revisamos su extensión
     if not file.filename:
         raise HTTPException(status_code=400, detail="No se proporcionó un nombre de archivo válido.")
-        
+
     extension = Path(file.filename).suffix.lower()
     if extension not in ['.wav', '.flac']:
         raise HTTPException(status_code=400, detail="El archivo debe ser .wav o .flac")
@@ -59,12 +57,12 @@ async def analyze_impulse_response_file(file: UploadFile = File(...)):
 
         # 5. Ejecutamos tu motor matemático
         resultados_acusticos = calcular_parametros_acusticos(ri=senal_numpy, fs=fs)
-        
+
         # 6. Formateamos las claves a texto para que el JSON no explote (como vimos antes)
         resultados_formateados = {}
         for parametro, valores in resultados_acusticos.items():
             resultados_formateados[parametro] = {str(frec): val for frec, val in valores.items()}
-            
+
         # 7. Devolvemos el resultado triunfal
         return AnalysisResponse(
             mensaje="Análisis acústico completado con éxito.",
@@ -76,7 +74,7 @@ async def analyze_impulse_response_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Fallo en el motor de análisis: {str(e)}")
-    
+
     finally:
         # 8. LIMPIEZA: Siempre borramos el archivo temporal para no llenar la compu de basura
         if os.path.exists(ruta_temporal):

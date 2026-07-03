@@ -1,11 +1,12 @@
 """Tests para los endpoints de la API (Milestone 3)."""
 
-from scipy import io
-import pytest
-import numpy as np
 import io
+
+import numpy as np
 import scipy.io.wavfile as wavfile
 from fastapi.testclient import TestClient
+from scipy import io
+
 from app.main import app
 
 client = TestClient(app)
@@ -13,14 +14,14 @@ client = TestClient(app)
 
 class TestAPIEndpointsyHealthCheck:
     """Tests para los endpoints de FastAPI."""
-    
+
     def test_health_check(self):
         """Verifica que el endpoint de salud esté operativo."""
         client = TestClient(app) # (O borrá esta línea si ya definiste 'client' arriba de todo)
         response = client.get("/health")
         assert response.status_code == 200
         assert response.json() == {"status": "ok"}
-        
+
     def test_analysis_endpoint(self):
         """Enviar un archivo WAV a /api/v1/analysis/impulse-response y verificar respuesta."""
         client = TestClient(app)
@@ -30,17 +31,17 @@ class TestAPIEndpointsyHealthCheck:
     duracion = 1.0
     t = np.linspace(0, duracion, int(fs * duracion), endpoint=False)
     ri_falsa = np.random.randn(len(t)).astype(np.float32)
-    
+
     buffer = io.BytesIO()
     wavfile.write(buffer, fs, ri_falsa)
     buffer.seek(0) # Volvemos al inicio del archivo virtual
-    
+
     #Se simula la subida (Upload) del archivo como form-data
     response = client.post(
          "/api/v1/analysis/impulse-response",
          files={"file": ("test_ri.wav", buffer, "audio/wav")}
          )
-    
+
     #Verificamos que la API lo haya procesado y devuelto un 200 OK
     assert response.status_code == 200
     #Verificamos que devuelva los parámetros, por ejemplo el T60, que es el principal parámetro acústico de interés:
@@ -50,10 +51,10 @@ class TestAPIEndpointsyHealthCheck:
          """Verificar que /api/v1/signals/pink-noise genera y devuelve un WAV valido."""
          client = TestClient(app)
     response = client.get("/api/v1/signals/pink-noise?duracion=1.0")
-    
+
     #Verificamos que el pedido fue exitoso
     assert response.status_code == 200
-    
+
     # Verificamos que el servidor nos está devolviendo un archivo de audio y no un texto
     assert response.headers["content-type"] == "audio/wav"
 
@@ -63,12 +64,12 @@ class TestAPIEndpointsyHealthCheck:
 
     #Fabricamos un archivo de texto cualquiera, simulando que el usuario se equivocó
     archivo_falso = io.BytesIO(b"Este es un archivo de texto, no un audio.")
-    
+
     #Se lo mandamos al endpoint que procesa audios
     response = client.post(
          "/api/v1/analysis/impulse-response",
          files={"file": ("documento.txt", archivo_falso, "text/plain")}
          )
-    
+
     #Verificamos que la API se haya defendido correctamente tirando un 422, "Unprocessable Entity"
     assert response.status_code == 422

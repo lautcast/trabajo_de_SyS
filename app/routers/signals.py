@@ -3,14 +3,14 @@
 import io
 
 import numpy as np
-from fastapi import APIRouter, Query
+from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
-from scipy.io import wavfile
 from pydantic import BaseModel, Field
+from scipy.io import wavfile
 
 from app.services.pink_noise import generar_ruido_rosa
+from app.services.signal_utils import sintetizar_ri
 from app.services.sine_sweep import generar_sine_sweep
-from app.services.signal_utils import a_escala_log, cargar_audio, sintetizar_ri
 
 router = APIRouter()
 
@@ -40,7 +40,7 @@ def post_pink_noise(request: PinkNoiseRequest):
     buffer.seek(0)
 
     return StreamingResponse(
-        buffer, 
+        buffer,
         media_type="audio/wav",
         headers={"Content-Disposition": f"attachment; filename=ruido_rosa_{request.duracion}s.wav"}
     )
@@ -53,9 +53,9 @@ def post_sine_sweep(request: SineSweepRequest):
     """
     # Extraemos los datos del request
     sine_sweep, filto_inv = generar_sine_sweep(
-        f1=request.f1, 
-        f2=request.f2, 
-        duracion=request.duracion, 
+        f1=request.f1,
+        f2=request.f2,
+        duracion=request.duracion,
         fs=request.fs
     )
 
@@ -68,8 +68,8 @@ def post_sine_sweep(request: SineSweepRequest):
     filename = f"sine_sweep-{int(request.f1)}_Hz_a_{int(request.f2)}_Hz-{request.duracion}_seg.wav"
 
     return StreamingResponse(
-        buffer, 
-        media_type="audio/wav", 
+        buffer,
+        media_type="audio/wav",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 class SintetizarRIRequest(BaseModel):

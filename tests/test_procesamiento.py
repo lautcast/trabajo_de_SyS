@@ -236,4 +236,4 @@ class TestDeconvolución:
     #verificamos que el pico efectivamente haya quedado normalizado a 1.0 como dice tu código
     assert np.isclose(np.max(np.abs(ri_recuperada)), 1.0), "Fallo: El pico máximo de la RI recuperada no está normalizado a 1.0"
 
-    
+

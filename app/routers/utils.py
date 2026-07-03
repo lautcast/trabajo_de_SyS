@@ -1,26 +1,16 @@
 "Milestone 3: Endpoints de utilidades"
 
-import io
 
 import numpy as np
 from fastapi import APIRouter
-from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
-from scipy.io import wavfile
-from scipy.signal import hilbert
-from typing import List, Dict, Optional, Any
-from app.services.acoustic_parameters import suavizar_signal, integral_schroeder, regresion_lineal
-from app.services.filter import filtro_octava
 
+from app.services.acoustic_parameters import integral_schroeder, suavizar_signal
 from app.services.signal_utils import a_escala_log, cargar_audio
 
 router = APIRouter()
 
 # router.get para la funcion sintetizar_ri.
-
-from fastapi import APIRouter
-
-
 
 import os
 import shutil
@@ -105,7 +95,6 @@ async def post_cargar_audio(
             os.remove(ruta_temporal)
 
 
-from pydantic import BaseModel, Field
 
 
 #  MODELOS DE DATOS (PYDANTIC)
@@ -153,10 +142,10 @@ class SmoothingResponse(BaseModel):
 
 
 class SchroederRequest(BaseModel):
-    ri: List[float] = Field(..., description="Arreglo de la Respuesta al Impulso (array 1D)")
+    ri: list[float] = Field(..., description="Arreglo de la Respuesta al Impulso (array 1D)")
 
 class SchroederResponse(BaseModel):
-    edc_db: List[float] = Field(..., description="Curva de decaimiento energético en dB (EDC)")
+    edc_db: list[float] = Field(..., description="Curva de decaimiento energético en dB (EDC)")
 
 @router.post("/smoothing", response_model=SmoothingResponse, summary="Suavizar Señal")
 def procesar_suavizado(request: SmoothingRequest):
@@ -192,15 +181,14 @@ def procesar_schroeder(request: SchroederRequest):
     """
     # 1. Transformamos JSON a NumPy
     senal_numpy = np.array(request.ri, dtype=np.float64)
-    
+
     try:
         # 2. Ejecutamos tu función
         edc_resultado = integral_schroeder(ri=senal_numpy)
-        
+
         # 3. Devolvemos la respuesta
         return SchroederResponse(edc_db=edc_resultado.tolist())
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al calcular la integral de Schroeder: {str(e)}")
-    
-    from fastapi import APIRouter, HTTPException
+

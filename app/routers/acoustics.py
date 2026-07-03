@@ -1,37 +1,35 @@
 "Milestone 3: Endpoints de análisis"
 
+
+import numpy as np
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from typing import List, Union
-import numpy as np
-from scipy.signal import hilbert
-from typing import List, Dict, Optional, Any
+
 from app.services.acoustic_parameters import calcular_parametros_acusticos, integral_schroeder, regresion_lineal
-from app.services.filter import filtro_octava
 
 router = APIRouter()
 
 
 class AcousticsRequest(BaseModel):
-    ri: List[float] = Field(..., description="Arreglo de la Respuesta al Impulso (array 1D)")
+    ri: list[float] = Field(..., description="Arreglo de la Respuesta al Impulso (array 1D)")
     fs: int = Field(48000, description="Frecuencia de muestreo en Hz")
 
 class AcousticsByBandsResponse(BaseModel):
     # Dict[str, float] permite devolver un objeto JSON como: {"1000.0": 1.5, "2000.0": 1.2}
-    EDT: Dict[str, Optional[float]]
-    T10: Dict[str, Optional[float]]
-    T20: Dict[str, Optional[float]]
-    T30: Dict[str, Optional[float]]
-    D50: Dict[str, Optional[float]]
-    C80: Dict[str, Optional[float]]
+    EDT: dict[str, float | None]
+    T10: dict[str, float | None]
+    T20: dict[str, float | None]
+    T30: dict[str, float | None]
+    D50: dict[str, float | None]
+    C80: dict[str, float | None]
 
 class AcousticsBroadbandResponse(BaseModel):
-    EDT: Optional[float] = Field(None, description="Early Decay Time global (segundos)")
-    T10: Optional[float] = Field(None, description="T10 global (segundos)")
-    T20: Optional[float] = Field(None, description="T20 global (segundos)")
-    T30: Optional[float] = Field(None, description="T30 global (segundos)")
-    D50: Optional[float] = Field(None, description="Definición global (%)")
-    C80: Optional[float] = Field(None, description="Claridad global (dB)")
+    EDT: float | None = Field(None, description="Early Decay Time global (segundos)")
+    T10: float | None = Field(None, description="T10 global (segundos)")
+    T20: float | None = Field(None, description="T20 global (segundos)")
+    T30: float | None = Field(None, description="T30 global (segundos)")
+    D50: float | None = Field(None, description="Definición global (%)")
+    C80: float | None = Field(None, description="Claridad global (dB)")
 
 @router.post("/parameters/by-bands", response_model=AcousticsByBandsResponse, summary="Calcular Parámetros por Bandas")
 def calcular_parametros_bandas_endpoint(request: AcousticsRequest):
@@ -42,12 +40,12 @@ def calcular_parametros_bandas_endpoint(request: AcousticsRequest):
     para cada frecuencia central.
     """
     senal_numpy = np.array(request.ri, dtype=np.float64)
-    
+
     try:
         # Llamamos a tu super-función
         diccionario_resultados = calcular_parametros_acusticos(ri=senal_numpy, fs=request.fs)
         return diccionario_resultados
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error procesando parámetros acústicos: {str(e)}")
 
@@ -59,7 +57,7 @@ def calcular_parametros_global_endpoint(request: AcousticsRequest):
     """
     ri = np.array(request.ri, dtype=np.float64)
     fs = request.fs
-    
+
     try:
         # 1. Cálculos de Energía (Sin filtros)
         ri_cuadrado = ri ** 2
@@ -95,7 +93,7 @@ def calcular_parametros_global_endpoint(request: AcousticsRequest):
 
         def calcular_tx(indice_inicio, indice_final):
             if indice_final <= indice_inicio or (indice_final - indice_inicio) < 2:
-                return None 
+                return None
             tramo_temporal = t[indice_inicio:indice_final]
             db = envolvente[indice_inicio:indice_final]
             m, b, R_2 = regresion_lineal(tramo_temporal, db)
@@ -115,6 +113,6 @@ def calcular_parametros_global_endpoint(request: AcousticsRequest):
             D50=d50,
             C80=c80
         )
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error procesando parámetros globales: {str(e)}")
