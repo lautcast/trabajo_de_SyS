@@ -51,6 +51,7 @@ def suavizar_signal(signal: np.ndarray, ventana: int|str = 'hilbert') -> np.ndar
         # Aplicamos la funcion signal.hilbert() de scipy para obtener la señal analítica
         # que es igual a la suma de la señal real con la transformada de Hilbert de la misma.
 
+        # Agregamos np.asarray() para que Pylance entienda correctamente el tipo de dato
         analitica = np.asarray(hilbert(signal))
 
         # Para calcular la envolvente de la señal real, calculamos la magnitud de la señal analítica
