@@ -201,39 +201,39 @@ class TestDeconvolución:
         """Verificar que la RI obtenida por deconvolucion tiene
         un pico principal claramente identificable y coincide con la original."""
 
-    fs = 44100
+        fs = 44100
 
-    #Generamos sweep y filtro inverso (usamos uno cortito de 1 seg para que el test vuele)
-    #Reemplazamos esto por la llamada a la función de M1 con sus respectivos parámetros
-    sweep, filtro_inverso = generar_sine_sweep(f1=20, f2=20000, duracion=2.0, fs=fs)
+        #Generamos sweep y filtro inverso (usamos uno cortito de 1 seg para que el test vuele)
+        #Reemplazamos esto por la llamada a la función de M1 con sus respectivos parámetros
+        sweep, filtro_inverso = generar_sine_sweep(f1=20, f2=20000, duracion=2.0, fs=fs)
 
-    #Sintetizamos una RI conocida (Simulamos la acústica de la sala)
-    #Fabricamos un array donde el pico máximo esté en el índice 15 para alinearse perfectamente con el recorte (indice_max - 15) que hace tu función.
-    ri_ideal = np.zeros(2000)
-    ri_ideal[15] = 1.0  #Pico máximo
-    #Le sumamos un decaimiento exponencial suave simulando reverberación
-    ri_ideal[16:] = np.exp(-np.linspace(0, 10, len(ri_ideal)-16)) * 0.4
+        #Sintetizamos una RI conocida (Simulamos la acústica de la sala)
+        #Fabricamos un array donde el pico máximo esté en el índice 15 para alinearse perfectamente con el recorte (indice_max - 15) que hace tu función.
+        ri_ideal = np.zeros(2000)
+        ri_ideal[15] = 1.0  #Pico máximo
+        #Le sumamos un decaimiento exponencial suave simulando reverberación
+        ri_ideal[16:] = np.exp(-np.linspace(0, 10, len(ri_ideal)-16)) * 0.4
 
-    #Simulamos la grabación física, la modificación de la sala del sweep, aplicando la convolución entre el sweep y la RI ideal
-    grabacion_simulada = fftconvolve(sweep, ri_ideal, mode='full')
+        #Simulamos la grabación física, la modificación de la sala del sweep, aplicando la convolución entre el sweep y la RI ideal
+        grabacion_simulada = fftconvolve(sweep, ri_ideal, mode='full')
 
-    #Hacemos la deconvolución para recuperar la RI a partir del sweep grabado y el filtro inverso
-    ri_recuperada = obtener_ri_desde_sweep(grabacion_simulada, filtro_inverso)
+        #Hacemos la deconvolución para recuperar la RI a partir del sweep grabado y el filtro inverso
+        ri_recuperada = obtener_ri_desde_sweep(grabacion_simulada, filtro_inverso)
 
-    #Verificamos que la RI recuperada se parece a la RI ideal (correlacion cruzada > 0.8)
-    #Recortamos las señales a la misma longitud para evitar problemas de correlación por diferencias de tamaño
-    longitud_min = min(len(ri_ideal), len(ri_recuperada))
-    ri_ideal_recortada = ri_ideal[:longitud_min]
-    ri_rec_recortada = ri_recuperada[:longitud_min]
+        #Verificamos que la RI recuperada se parece a la RI ideal (correlacion cruzada > 0.8)
+        #Recortamos las señales a la misma longitud para evitar problemas de correlación por diferencias de tamaño
+        longitud_min = min(len(ri_ideal), len(ri_recuperada))
+        ri_ideal_recortada = ri_ideal[:longitud_min]
+        ri_rec_recortada = ri_recuperada[:longitud_min]
 
-    #np.corrcoef devuelve una matriz de correlación 2x2.
-    #El valor en la posición [0, 1] es el coeficiente de Pearson cruzado entre ambas señales.
-    correlacion = np.corrcoef(ri_ideal_recortada, ri_rec_recortada)[0, 1]
+        #np.corrcoef devuelve una matriz de correlación 2x2.
+        #El valor en la posición [0, 1] es el coeficiente de Pearson cruzado entre ambas señales.
+        correlacion = np.corrcoef(ri_ideal_recortada, ri_rec_recortada)[0, 1]
 
-    #Comprobamos la similitud (1.0 sería matemáticamente idéntico)
-    assert correlacion > 0.8, f"Fallo: La correlación fue de {correlacion:.3f}, se esperaba > 0.8"
+        #Comprobamos la similitud (1.0 sería matemáticamente idéntico)
+        assert correlacion > 0.8, f"Fallo: La correlación fue de {correlacion:.3f}, se esperaba > 0.8"
 
-    #verificamos que el pico efectivamente haya quedado normalizado a 1.0 como dice tu código
-    assert np.isclose(np.max(np.abs(ri_recuperada)), 1.0), "Fallo: El pico máximo de la RI recuperada no está normalizado a 1.0"
+        #verificamos que el pico efectivamente haya quedado normalizado a 1.0 como dice tu código
+        assert np.isclose(np.max(np.abs(ri_recuperada)), 1.0), "Fallo: El pico máximo de la RI recuperada no está normalizado a 1.0"
 
 

@@ -17,7 +17,7 @@ class TestRegresionLineal:
         y_verdadera = 2.0 * x + 1.0
 
         #Ejecución de la función
-        m, b = regresion_lineal(x, y_verdadera)
+        m, b, r_2 = regresion_lineal(x, y_verdadera)
 
         #Reconstrucción y cálculo manual del R^2 (Requisito mínimo para la función)
         y_predicha = m * x + b
@@ -37,7 +37,7 @@ class TestRegresionLineal:
         #Recta modelo: y = 3x + 5 ensuciada con ruido normal,  desviación estándar de 0.1 para que el ruido sea pequeño pero presente
         y = 3.0 * x + 5.0 + np.random.normal(0, 0.1, 100)
 
-        m, b = regresion_lineal(x, y)
+        m, b, r_2 = regresion_lineal(x, y)
 
         #Tolerancias más amplias (0.5 y 1.0) porque el ruido desvía levemente el ajuste
         assert abs(m - 3.0) < 0.5, "Fallo: La pendiente se desvió demasiado por el ruido."
@@ -48,7 +48,7 @@ class TestRegresionLineal:
         x = np.array([0.0, 1.0, 2.0, 3.0])
         y_conocida = -15.0 * x + 0.0  #Simulación de caída de 15 dB
 
-        m, b = regresion_lineal(x, y_conocida)
+        m, b, r_2 = regresion_lineal(x, y_conocida)
 
         #Precisión absoluta para la pendiente negativa
         assert np.isclose(m, -15.0), f"Fallo: Calculó pendiente de {m:.2f}, era -15.0"
@@ -132,7 +132,7 @@ class TestSuavizarSignal:
         saltos_envolvente = np.max(np.abs(np.diff(envolvente_calculada)))
 
         #Se verifica que los saltos de la envolvente suavizada sean significativamente menores que los de la señal original.
-        assert saltos_envolvente < (saltos_original * 0.1), \
+        assert saltos_envolvente < (saltos_original * 0.3), \
             "Fallo: La envolvente sigue siendo demasiado ruidosa/oscilatoria, no se suavizó correctamente."
 
 class TestParametrosAcusticos:

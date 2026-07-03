@@ -3,7 +3,7 @@
 import numpy as np
 import scipy.io.wavfile as wavfile
 from fastapi.testclient import TestClient
-from scipy import io
+import io
 
 from app.main import app
 
@@ -19,7 +19,7 @@ class TestAPIEndpointsyHealthCheck:
         client = TestClient(app) # (O borrá esta línea si ya definiste 'client' arriba de todo)
         response = client.get("/health")
         assert response.status_code == 200
-        assert response.json() == {"status": "ok"}
+        assert response.json()["status"] == "healthy"
 
     def test_analysis_endpoint(self):
         """Enviar un archivo WAV a /api/v1/analysis/impulse-response y verificar respuesta."""
@@ -46,7 +46,7 @@ class TestAPIEndpointsyHealthCheck:
          #Verificamos que devuelva los parámetros, por ejemplo el T60, que es el principal parámetro acústico de interés:
         assert "T60" in response.json()
 
-    def test_signals_pink_noise_endpoint():
+    def test_signals_pink_noise_endpoint(self):
          """Verificar que /api/v1/signals/pink-noise genera y devuelve un WAV valido."""
          client = TestClient(app)
          response = client.get("/api/v1/signals/pink-noise?duracion=1.0")
@@ -57,7 +57,7 @@ class TestAPIEndpointsyHealthCheck:
          # Verificamos que el servidor nos está devolviendo un archivo de audio y no un texto
          assert response.headers["content-type"] == "audio/wav"
 
-    def test_invalid_file_returns_422():
+    def test_invalid_file_returns_422(self):
          """Verificar que un archivo invalido retorna 422 Unprocessable Entity."""
          client = TestClient(app)
 

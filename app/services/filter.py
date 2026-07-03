@@ -52,6 +52,12 @@ def filtro_octava(signal_in: np.ndarray, fc: float, fs: int, orden: int = 4) -> 
     w_inf = f_inf/f_nyquist
     w_sup = f_sup/f_nyquist
 
+    # Para salvaguardar la integridad del código, en el caso de que f_sup > f_nyquist debido a la frecuencia
+    # de corte superior de la frecuencia central de 16 kHz, escribimos la siguiente línea: 
+
+    if w_sup >= 1.0:
+        w_sup = 0.999
+
     # Calculamos los parámetros del filtro butterworth
 
     sos = signal.butter(orden, [w_inf, w_sup], btype='band', output='sos')
