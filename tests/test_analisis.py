@@ -60,37 +60,37 @@ class TestIntegralSchroeder:
     def test_integral_schroeder_forma_y_decreciente(self):
         """Verifica que la integral de Schroeder produzca una curva decreciente y con inicio en 0 dB."""
 
-    #Señal de prueba (Una RI ruidosa)
-    fs = 44100
-    duracion = 1.0
-    t = np.linspace(0, duracion, int(fs * duracion), endpoint=False)
+        #Señal de prueba (Una RI ruidosa)
+        fs = 44100
+        duracion = 1.0
+        t = np.linspace(0, duracion, int(fs * duracion), endpoint=False)
 
-    #Se simula sala real: Ruido aleatorio cayendo exponencialmente
-    ruido = np.random.randn(len(t))
-    ri_prueba = ruido * np.exp(-6 * t)
+        #Se simula sala real: Ruido aleatorio cayendo exponencialmente
+        ruido = np.random.randn(len(t))
+        ri_prueba = ruido * np.exp(-6 * t)
 
-    #Se ejecuta la integral de Schroeder sobre la señal de prueba
-    curva_db = integral_schroeder(ri_prueba)
+        #Se ejecuta la integral de Schroeder sobre la señal de prueba
+        curva_db = integral_schroeder(ri_prueba)
 
-    #Asserts que verifican las propiedades de la curva de Schroeder (Las 3 auditorías innegociables)
+        #Asserts que verifican las propiedades de la curva de Schroeder (Las 3 auditorías innegociables)
 
-    #Assert A: La Longitud de la curva de Schroeder debe ser igual a la longitud de la RI original
-    assert len(curva_db) == len(ri_prueba), \
-        "Fallo: La curva de Schroeder no tiene la misma cantidad de muestras que la RI original."
+        #Assert A: La Longitud de la curva de Schroeder debe ser igual a la longitud de la RI original
+        assert len(curva_db) == len(ri_prueba), \
+            "Fallo: La curva de Schroeder no tiene la misma cantidad de muestras que la RI original."
 
-    #Assert B: El Inicio a 0 dB
-    #Se utiliza np.isclose porque en Python 0.0 a veces se calcula como 0.00000000001
-    assert np.isclose(curva_db[0], 0.0, atol=1e-5), \
-        f"Fallo: La curva arranca en {curva_db[0]:.3f} dB en lugar de 0 dB."
+        #Assert B: El Inicio a 0 dB
+        #Se utiliza np.isclose porque en Python 0.0 a veces se calcula como 0.00000000001
+        assert np.isclose(curva_db[0], 0.0, atol=1e-5), \
+            f"Fallo: La curva arranca en {curva_db[0]:.3f} dB en lugar de 0 dB."
 
-    #Assert C: La curva debe ser estrictamente decreciente (no puede subir nunca)
-    # np.diff calcula los "escalones" entre cada muestra y la siguiente, verificando que sea descreciente.
-    escalones = np.diff(curva_db)
+        #Assert C: La curva debe ser estrictamente decreciente (no puede subir nunca)
+        # np.diff calcula los "escalones" entre cada muestra y la siguiente, verificando que sea descreciente.
+        escalones = np.diff(curva_db)
 
-    #Le damos un margen minúsculo (1e-10) por los errores de redondeo de punto flotante de Python
-    #Si alguna resta es mayor a 1e-10, significa que la curva subió en algún punto, lanza un fallo.
-    assert np.all(escalones <= 1e-10), \
-        "Fallo: La curva de Schroeder tiene subidas de energía, no es estrictamente decreciente."
+        #Le damos un margen minúsculo (1e-10) por los errores de redondeo de punto flotante de Python
+        #Si alguna resta es mayor a 1e-10, significa que la curva subió en algún punto, lanza un fallo.
+        assert np.all(escalones <= 1e-10), \
+            "Fallo: La curva de Schroeder tiene subidas de energía, no es estrictamente decreciente."
 
 class TestSuavizarSignal:
     """Tests para la funcion suavizar_signal."""
@@ -98,42 +98,42 @@ class TestSuavizarSignal:
     def test_suavizar_hilbert_envolvente(self):
         """La envolvente debe ser no negativa y suave."""
 
-    #Se fabrica una señal modelo de prueba
-    fs = 44100
-    duracion = 1.0
-    t = np.linspace(0, duracion, int(fs * duracion), endpoint=False)
+        #Se fabrica una señal modelo de prueba
+        fs = 44100
+        duracion = 1.0
+        t = np.linspace(0, duracion, int(fs * duracion), endpoint=False)
 
-    frecuencia_portadora = 1000  # Una onda de 1 kHz
+        frecuencia_portadora = 1000  # Una onda de 1 kHz
 
-    #Esta es la "silueta" real perfecta que tu función debería recuperar.
-    envolvente_ideal = np.exp(-3 * t)
+        #Esta es la "silueta" real perfecta que tu función debería recuperar.
+        envolvente_ideal = np.exp(-3 * t)
 
-    #Multiplicamos la silueta por la onda  para generar nuestra RI simulada
-    ri_simulada = envolvente_ideal * np.sin(2 * np.pi * frecuencia_portadora * t)
+        #Multiplicamos la silueta por la onda  para generar nuestra RI simulada
+        ri_simulada = envolvente_ideal * np.sin(2 * np.pi * frecuencia_portadora * t)
 
-    #Se pone a prueba la función suavizar_signal con la opción de ventana 'hilbert'
-    envolvente_calculada = suavizar_signal(ri_simulada, ventana='hilbert')
+        #Se pone a prueba la función suavizar_signal con la opción de ventana 'hilbert'
+        envolvente_calculada = suavizar_signal(ri_simulada, ventana='hilbert')
 
-    #Se verifica que la envolvente calculada cumpla con ciertos criterios de validez y suavidad a traves de los asserts.
-    #Si alguno de estos asserts falla, se lanzara un AssertionError con un mensaje descriptivo.
+        #Se verifica que la envolvente calculada cumpla con ciertos criterios de validez y suavidad a traves de los asserts.
+        #Si alguno de estos asserts falla, se lanzara un AssertionError con un mensaje descriptivo.
 
-    #Primero: control de dimensiones (previene que se rompa el eje de tiempo)
-    assert len(envolvente_calculada) == len(ri_simulada), \
-        "Fallo: La función modificó la cantidad de muestras de la señal original."
+        #Primero: control de dimensiones (previene que se rompa el eje de tiempo)
+        assert len(envolvente_calculada) == len(ri_simulada), \
+            "Fallo: La función modificó la cantidad de muestras de la señal original."
 
-    #Segundo: control físico (La energía NO puede ser negativa)
-    assert np.all(envolvente_calculada >= 0), \
-        "Fallo: La envolvente obtenida contiene valores por debajo de cero."
+        #Segundo: control físico (La energía NO puede ser negativa)
+        assert np.all(envolvente_calculada >= 0), \
+            "Fallo: La envolvente obtenida contiene valores por debajo de cero."
 
-    #Tercero: control de suavidad (el núcleo del test)
-    #Se calculan los "saltos" (la derivada discreta) entre una muestra y la siguiente.
-    #Una señal oscilatoria tiene saltos enormes a diferencia de una señal suave, que tiene saltos minúsculos.
-    saltos_original = np.max(np.abs(np.diff(ri_simulada)))
-    saltos_envolvente = np.max(np.abs(np.diff(envolvente_calculada)))
+        #Tercero: control de suavidad (el núcleo del test)
+        #Se calculan los "saltos" (la derivada discreta) entre una muestra y la siguiente.
+        #Una señal oscilatoria tiene saltos enormes a diferencia de una señal suave, que tiene saltos minúsculos.
+        saltos_original = np.max(np.abs(np.diff(ri_simulada)))
+        saltos_envolvente = np.max(np.abs(np.diff(envolvente_calculada)))
 
-    #Se verifica que los saltos de la envolvente suavizada sean significativamente menores que los de la señal original.
-    assert saltos_envolvente < (saltos_original * 0.1), \
-        "Fallo: La envolvente sigue siendo demasiado ruidosa/oscilatoria, no se suavizó correctamente."
+        #Se verifica que los saltos de la envolvente suavizada sean significativamente menores que los de la señal original.
+        assert saltos_envolvente < (saltos_original * 0.1), \
+            "Fallo: La envolvente sigue siendo demasiado ruidosa/oscilatoria, no se suavizó correctamente."
 
 class TestParametrosAcusticos:
     """Tests para los parámetros acústicos ISO 3382 (T60, D50, C80)."""
