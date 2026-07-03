@@ -34,12 +34,12 @@ def analyze_impulse_response(request: AnalysisRequest):
         # 2. Llamamos a TU función maestra (el motor matemático)
         resultados_acusticos = calcular_parametros_acusticos(ri=senal_numpy, fs=request.fs)
         
-        # ---> NUEVO: Convertimos las claves (frecuencias) a strings para que el JSON sea válido
+        # --->Convertimos las claves (frecuencias) a strings para que el JSON sea válido
         resultados_formateados = {}
         for parametro, valores in resultados_acusticos.items():
             resultados_formateados[parametro] = {str(frecuencia): valor for frecuencia, valor in valores.items()}
         
-        # 3. Empaquetamos todo en una respuesta bonita
+        # 3. Empaquetamos todo en una respuesta
         return AnalysisResponse(
             mensaje="Análisis acústico completado con éxito según ISO 3382.",
             frecuencia_muestreo=request.fs,
