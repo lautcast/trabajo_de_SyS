@@ -2,6 +2,7 @@
 
 import numpy as np
 from scipy.signal import welch
+
 from app.services.pink_noise import generar_ruido_rosa
 from app.services.sine_sweep import generar_sine_sweep
 
@@ -106,7 +107,7 @@ class TestGenerarSineSweep:
         fs = 44100
         sweep, filtro_inv = generar_sine_sweep(20, 20000, duracion, fs)
 
-        # Definimos una variable la cual contiene al numero de muestras del sine sweep segun nuestros parametros genericos.      
+        # Definimos una variable la cual contiene al numero de muestras del sine sweep segun nuestros parametros genericos.
 
         expected_length = int(duracion * fs)
 
@@ -150,8 +151,8 @@ class TestGenerarSineSweep:
 
         # Verificamos
 
-        assert frec_fin > frec_inicio, f"Fallo: La frecuencia no aumenta con el tiempo"
-        assert frec_inicio < 1000, f"Fallo: Arranca con frecuencia muy alta ({frec_inicio} Hz)" 
+        assert frec_fin > frec_inicio, "Fallo: La frecuencia no aumenta con el tiempo"
+        assert frec_inicio < 1000, f"Fallo: Arranca con frecuencia muy alta ({frec_inicio} Hz)"
 
 
 """----------------------------------------------------------------------------------------------------------------------------------------------------------------------"""

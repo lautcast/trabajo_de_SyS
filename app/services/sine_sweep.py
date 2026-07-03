@@ -4,11 +4,10 @@ Milestone 1: Generacion de senales.
 """
 
 import numpy as np
-from scipy.signal.windows import tukey
 
 
 def generar_sine_sweep(f1: float = 20.00, f2: float = 20000.00, duracion: float = 2, fs: int = 48000) -> tuple[np.ndarray, np.ndarray]:
-    
+
     """
     Acciones
     --------
@@ -35,29 +34,29 @@ def generar_sine_sweep(f1: float = 20.00, f2: float = 20000.00, duracion: float 
     .. [1] Farina, A. (2000). "Simultaneous measurement of impulse response and distortion with a swept-sine technique."
     """
 
-    # Creamos un arreglo con  N = (duracion * fs) muestras, y armamos un arreglo con esa cantidad de muestras. 
+    # Creamos un arreglo con  N = (duracion * fs) muestras, y armamos un arreglo con esa cantidad de muestras.
     # Luego, dividimos por la frecuencia de muestreo para obtener tiempos reales en lugar de muestras, y armar el vector tiempo.
 
     muestras = duracion * fs
     t = np.arange(int(muestras)) / fs
 
     # Construimos la fase del sine sweep senoidal a partir de la tecnia Farina.
-    
+
     fase = (2 * np.pi * f1 * duracion / (np.log(f2 / f1))) * (np.exp((t / duracion) * (np.log(f2 / f1))) - 1)
 
     # Creamos el sine sweep a partir de dicha fase.
-    
+
     sweep = np.sin(fase)
 
     # Ahora, para construir el filtro inverso, primero invertimos el arreglo del sine sweep en el tiempo usando la funcion de slicing
-    
+
     sweep_invertido = sweep[::-1]
 
     # El sine sweep tiene mucha energía acumulada en los graves y poca en los agudos, por lo que queremos que el filtro inverso compense esta situacion.
     # Para ello, creamos una envolvente que depende del vector tiempo, la cual atenúa las frecuencias bajas y amplifica las altas.
 
     envolvente = (f2 / f1) ** -(t / (2 * duracion))
-    
+
     # Finalmente multiplicamos la envolvente con el sine sweep invertido para obtener el filtro inverso.
 
     filtro_inverso = sweep_invertido * envolvente

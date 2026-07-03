@@ -1,100 +1,126 @@
 "Milestone 1 a 3: Endpoints de Generación"
 
-from fastapi import APIRouter, Query, Body
-from typing import List
-from app.services.pink_noise import generar_ruido_rosa
 import io
+
 import numpy as np
 from fastapi import APIRouter, Query
 from fastapi.responses import StreamingResponse
 from scipy.io import wavfile
+from pydantic import BaseModel, Field
 
 from app.services.pink_noise import generar_ruido_rosa
 from app.services.sine_sweep import generar_sine_sweep
-from app.services.signal_utils import sintetizar_ri
+from app.services.signal_utils import a_escala_log, cargar_audio, sintetizar_ri
 
 router = APIRouter()
 
-# router.get para la funcion generar_ruido_rosa.
 
-@router.get("/pink-noise", summary="Generar y descargar Ruido Rosa")
-def get_pink_noise(
-    duracion: float = Query(2.0, gt=0, le=10.0, description="Duración en segundos"),
-    fs: int = Query(44100, gt=0, description="Frecuencia de muestreo en Hz")
-):
+class PinkNoiseRequest(BaseModel):
+    duracion: float = Field(2.0, gt=0, le=10.0, description="Duración en segundos")
+    fs: int = Field(44100, gt=0, description="Frecuencia de muestreo en Hz")
+
+class SineSweepRequest(BaseModel):
+    f1: float = Field(20.0, gt=0, description="Frecuencia inicial en Hz.")
+    f2: float = Field(20000.0, gt=0, description="Frecuencia final en Hz.")
+    duracion: float = Field(2.0, gt=0, le=30.0, description="Duración en segundos.")
+    fs: int = Field(48000, gt=0, description="Frecuencia de muestreo en Hz.")
+
+@router.post("/pink-noise", summary="Generar y descargar Ruido Rosa")
+def post_pink_noise(request: PinkNoiseRequest):
     """
     Genera ruido rosa y lo devuelve como un archivo de audio .wav descargable.
     """
-
-    # Generamos la señal usando la función de generar_ruido_rosa, importada desde la carpeta services
-
-    ruido = generar_ruido_rosa(duracion, fs)
-
-    # Convertimos de float64 [-1, 1] a PCM 16-bit (estándar para archivos WAV)
-    # Esto es necesario para que el reproductor de audio entienda la amplitud.
+    # Usamos request.duracion y request.fs
+    ruido = generar_ruido_rosa(request.duracion, request.fs)
 
     audio_int16 = (ruido * 32767).astype(np.int16)
 
-    # Crear un buffer de memoria (archivo virtual)
-
     buffer = io.BytesIO()
-
-    # Escribimos el audio del buffer en formato WAV
-
-    wavfile.write(buffer, fs, audio_int16)
-
-    # Volvemos al inicio del buffer para que FastAPI pueda leerlo desde el principio
-
+    wavfile.write(buffer, request.fs, audio_int16)
     buffer.seek(0)
 
-    # Devolver el flujo de datos con el tipo de medio correcto
+    return StreamingResponse(
+        buffer, 
+        media_type="audio/wav",
+        headers={"Content-Disposition": f"attachment; filename=ruido_rosa_{request.duracion}s.wav"}
+    )
 
-    return StreamingResponse(buffer, media_type="audio/wav",headers={"Content-Disposition": f"attachment; filename=ruido_rosa_{duracion}s.wav"})
 
-
-# router.get para la funcion generar_sine_sweep.
-
-
-@router.get("/sine-sweep", summary="Generar y descargar Sine Sweep Logarítmico")
-def get_sine_sweep(
-    f1: float = Query(20.0, gt=0, description="Frecuencia inicial en Hz."),
-    f2: float = Query(20000.0, gt=0, description="Frecuencia final en Hz."),
-    duracion: float = Query(2.0, gt=0, le=30.0, description="Duración en segundos."),
-    fs: int = Query(48000, gt=0, description="Frecuencia de muestreo en Hz.")
-):
-
+@router.post("/sine-sweep", summary="Generar y descargar Sine Sweep Logarítmico")
+def post_sine_sweep(request: SineSweepRequest):
     """
-     Genera un sine sweep logarítmico y lo devuelve como archivo .wav descargable.
-
+    Genera un sine sweep logarítmico y lo devuelve como archivo .wav descargable.
     """
-
-    # Generamos la señal usando la función (descartamos el filtro inverso para la descarga)
-
-    sine_sweep, filto_inv = generar_sine_sweep(f1=f1, f2=f2, duracion=duracion, fs=fs)
-
-    # Convertimos los datos del arreglo a PCM 16-bit.
-    # Multiplicamos por 32767 para normalizar el float [-1, 1] al rango de int16
+    # Extraemos los datos del request
+    sine_sweep, filto_inv = generar_sine_sweep(
+        f1=request.f1, 
+        f2=request.f2, 
+        duracion=request.duracion, 
+        fs=request.fs
+    )
 
     audio_int16 = (sine_sweep * 32767).astype(np.int16)
 
-    # Creamos un buffer de memoria
-
     buffer = io.BytesIO()
-
-    # Escribimos el audio en el buffer en formato WAV
-
-    wavfile.write(buffer, fs, audio_int16)
-
-    # Volvemos al inicio del buffer
-
+    wavfile.write(buffer, request.fs, audio_int16)
     buffer.seek(0)
 
-    # Devolvemos el flujo de datos
+    filename = f"sine_sweep-{int(request.f1)}_Hz_a_{int(request.f2)}_Hz-{request.duracion}_seg.wav"
 
-    filename = f"sine_sweep-{int(f1)}_Hz_a_{int(f2)}_Hz-{duracion}_seg.wav"
+    return StreamingResponse(
+        buffer, 
+        media_type="audio/wav", 
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+class SintetizarRIRequest(BaseModel):
+    # Opcion 1: Requerido, sin los tres puntos, y usando json_schema_extra para el ejemplo
+    t60_por_banda: dict[float, float] = Field(
+        description="Diccionario de frecuencias centrales (Hz) y su T60 (segundos)",
+        json_schema_extra={
+            "example": {
+                "125.0": 2.0,
+                "250.0": 1.8,
+                "500.0": 1.5,
+                "1000.0": 1.2,
+                "2000.0": 1.0,
+                "4000.0": 0.8,
+                "4000.0": 0.8,
+            }
+        },
+    )
+    fs: int = Field(default=44100, gt=0, description="Frecuencia de muestreo en Hz")
+    duracion: float = Field(default=2.0, gt=0, le=10.0, description="Duración total en segundos")
 
-    return StreamingResponse(buffer, media_type="audio/wav", headers={"Content-Disposition": f"attachment; filename={filename}"})
-    
 
-# router.get para la funcion sintetizar_ri.
+# 2. El endpoint POST
+@router.post("/sintetizar-ri", summary="Sintetizar y descargar Respuesta al Impulso (RI)")
+def post_sintetizar_ri(request: SintetizarRIRequest):
+    """
+    Sintetiza una respuesta al impulso estocástica basada en T60 por bandas y la devuelve como un archivo de audio .wav descargable.
+    """
 
+    # Generamos la señal usando la función de sintetizar_ri, importada desde la carpeta services
+    # Le pasamos los parámetros que vienen en el body (request)
+    ri_flotante = sintetizar_ri(request.t60_por_banda, request.fs, request.duracion)
+
+    # Convertimos de float64 [-1, 1] a PCM 16-bit (estándar para archivos WAV)
+    # Esto es necesario para que el reproductor de audio entienda la amplitud.
+    audio_int16 = (ri_flotante * 32767).astype(np.int16)
+
+    # Crear un buffer de memoria (archivo virtual)
+    buffer = io.BytesIO()
+
+    # Escribimos el audio del buffer en formato WAV
+    wavfile.write(buffer, request.fs, audio_int16)
+
+    # Volvemos al inicio del buffer para que FastAPI pueda leerlo desde el principio
+    buffer.seek(0)
+
+    # Devolver el flujo de datos con el tipo de medio correcto
+    return StreamingResponse(
+        buffer,
+        media_type="audio/wav",
+        headers={
+            "Content-Disposition": f"attachment; filename=ri_sintetizada_{request.duracion}s.wav"
+        },
+    )
