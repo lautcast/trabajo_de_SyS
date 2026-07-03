@@ -1,19 +1,19 @@
 import matplotlib.pyplot as plt
 import numpy as np
-
+"""
 
 # ---------------------------------------------------------
 # 1. TUS FUNCIONES (Copiadas tal cual las definimos)
 # ---------------------------------------------------------
 def integral_schroeder(ri: np.ndarray) -> np.ndarray:
-    """Calcula la integral de Schroeder (Energy Decay Curve)."""
+    Calcula la integral de Schroeder (Energy Decay Curve).
     energia = ri ** 2
     edc = np.cumsum(energia[::-1])[::-1]
     edc_normalizada = edc / np.max(edc)
     return edc_normalizada
 
 def regresion_lineal(x: np.ndarray, y: np.ndarray) -> tuple[float, float]:
-    """Calcula la regresion lineal por minimos cuadrados."""
+    Calcula la regresion lineal por minimos cuadrados.
     coeficientes = np.polyfit(x, y, 1)
     pendiente = float(coeficientes[0])
     ordenada = float(coeficientes[1])
@@ -79,3 +79,64 @@ if __name__ == "__main__":
 
     print("Abriendo gráfico...")
     plt.show()
+"""
+
+import requests
+import numpy as np
+import time
+import matplotlib.pyplot as plt
+
+print("1. Generando RI sintética para prueba...")
+fs = 48000
+t = np.arange(fs * 2) / fs # 2 segundos de audio
+ruido = np.random.randn(len(t))
+decaimiento = np.exp(-3 * t) 
+ri_sintetica = ruido * decaimiento
+
+print("2. Preparando envío a la API...")
+payload = {
+    "ri": ri_sintetica.tolist(),
+    "fs": fs
+}
+
+url = "http://127.0.0.1:8000/api/v1/analysis/impulse-response"
+
+print("3. Enviando petición POST a la API (esto puede tardar unos segundos)...")
+inicio = time.time()
+respuesta = requests.post(url, json=payload)
+fin = time.time()
+
+print(f"\n--- RESPUESTA DEL SERVIDOR (Tardó {fin-inicio:.2f} segundos) ---")
+if respuesta.status_code == 200:
+    datos = respuesta.json()
+    print("Estado:", datos["mensaje"])
+    
+    # --- GRÁFICO DE RESULTADOS ---
+    # Extraemos específicamente el diccionario de T20
+    t20_dict = datos["parametros_por_banda"]["T20"]
+    
+    # Separamos las claves (frecuencias) y los valores (segundos)
+    bandas_hz = list(t20_dict.keys())
+    valores_t20 = list(t20_dict.values())
+    
+    print("\nAbriendo gráfico del T20...")
+    
+    plt.figure(figsize=(10, 6))
+    
+    # Trazamos la línea con marcadores (estilo clásico de acústica)
+    plt.plot(bandas_hz, valores_t20, marker='o', linestyle='-', color='#38bdf8', linewidth=2.5, markersize=8)
+    
+    # Decoramos el gráfico
+    plt.title("Tiempo de Reverberación (T20) por Bandas de Octava", fontsize=14, fontweight='bold')
+    plt.xlabel("Frecuencia Central (Hz)", fontsize=12)
+    plt.ylabel("T20 (Segundos)", fontsize=12)
+    plt.grid(True, linestyle='--', alpha=0.7)
+    
+    # Damos un pequeño margen en el eje Y para que no quede pegado al techo
+    plt.ylim(0, max(valores_t20) + 1.0)
+    
+    plt.show()
+
+else:
+    print(f"ERROR HTTP {respuesta.status_code}:")
+    print(respuesta.text)
