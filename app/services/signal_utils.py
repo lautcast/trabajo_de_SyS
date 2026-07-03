@@ -9,6 +9,8 @@ import numpy as np
 import soundfile as sf
 from scipy import signal
 
+from app.services.filter import filtro_octava
+
 
 def cargar_audio(ruta: str) -> tuple[np.ndarray, int]:
     """Carga un archivo de audio y retorna la senal y la frecuencia de muestreo.
@@ -61,15 +63,12 @@ def cargar_audio(ruta: str) -> tuple[np.ndarray, int]:
 
         # Capturamos cualquier error interno de la librería.
 
-        raise ValueError(f"Error al intentar leer el archivo de audio: {e}")
+        raise ValueError(f"Error al intentar leer el archivo de audio: {e}") from e
 
     return (senal, fs)
 
 
-from app.services.filter import filtro_octava
-
-
-def sintetizar_ri(t60_por_banda: dict[float, float] = {31.5: 2.4, 63: 2.2 ,125: 2.0, 250: 1.8, 500: 1.5, 1000: 1.2, 2000: 1.0, 4000: 0.8}, fs: int = 48000, duracion: float = 2) -> np.ndarray:
+def sintetizar_ri(t60_por_banda: dict[float, float] | None = None, fs: int = 48000, duracion: float = 2) -> np.ndarray:
     """
     Sintetiza una respuesta al impulso con valores de T60 conocidos por banda.
 
@@ -83,6 +82,13 @@ def sintetizar_ri(t60_por_banda: dict[float, float] = {31.5: 2.4, 63: 2.2 ,125: 
     -------
     np.ndarray --> Respuesta al impulso sintetizada y normalizada.
     """
+
+    # Definimos un diccionario con las frecuencias centrales normalizadas y el T60 por cada banda:
+
+    if t60_por_banda is None:
+        
+        t60_por_banda = {31.5: 2.4, 63: 2.2 ,125: 2.0, 250: 1.8, 500: 1.5, 1000: 1.2, 2000: 1.0, 4000: 0.8}
+
 
     # Calculamos la cantidad total de muestras y creamos el vector de tiempo (t).
 

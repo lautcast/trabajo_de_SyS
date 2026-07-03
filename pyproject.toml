@@ -45,7 +45,7 @@ select = [
     "B",   # flake8-bugbear
     "SIM", # flake8-simplify
 ]
-ignore = ["E501"]
+ignore = ["E501", "B008", "SIM108", "W291", "W293", "B023"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

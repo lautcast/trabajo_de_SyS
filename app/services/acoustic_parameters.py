@@ -123,7 +123,7 @@ def regresion_lineal(x: np.ndarray, y: np.ndarray) -> tuple[float, float, float]
     """
     # Primero calculamos la cantidad total de muestras y la guardamos en N.
 
-    N = len(x)
+    n = len(x)
 
     # Ahora, calculamos las sumatorias que neceistamos para calcular la pendiente 'm' y la ordenada 'b'.
     # Utilizamos np.sum() para sumar todos los elementos del array.
@@ -135,8 +135,8 @@ def regresion_lineal(x: np.ndarray, y: np.ndarray) -> tuple[float, float, float]
 
     # Luego aplicamos las fórmulas para la pendiente y la ordenada.
 
-    m = (N * sum_xy - sum_x * sum_y) / (N * sum_x2 - (sum_x)**2)
-    b = (sum_y - m * sum_x) / N
+    m = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - (sum_x)**2)
+    b = (sum_y - m * sum_x) / n
 
     # Ahora calculamos el coeficiente de determinación (R^2):
 
@@ -212,11 +212,11 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
         # Multiplicamos los 50 ms por la frecuencia de muestreo para obtener
         # la cantidad de muestras en ese tiempo.
 
-        N50 = int(0.050 * fs)
+        n50 = int(0.050 * fs)
 
         # Calculamos la energía total en los primeros 50 ms.
 
-        energia_50 = np.sum(ri_banda_cuadrado[:N50])
+        energia_50 = np.sum(ri_banda_cuadrado[:n50])
 
         # En la clave 'D50' del diccionario resultados colocamos el valor de este
         # parámetro para la freucencia central f.
@@ -230,14 +230,14 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
 
         # Primero calculamos la cantidad de muestras contenidas en 80 ms.
 
-        N80 = int(0.080 * fs)
+        n80 = int(0.080 * fs)
 
         # Luego, en 'energia_80' guardamos toda la energía de esos primeros 80 ms, mientras que
         # en 'energia_tardia_80' guardamos toda la energía del resto de la RI sin los primeros
         # 80 ms.
 
-        energia_80 = np.sum(ri_banda_cuadrado[:N80])
-        energia_tardia_80 = np.sum(ri_banda_cuadrado[N80:])
+        energia_80 = np.sum(ri_banda_cuadrado[:n80])
+        energia_tardia_80 = np.sum(ri_banda_cuadrado[n80:])
 
         # Finalmente, calculamos la relacion para hallar C80 y guardamos en resultados.
         # Prevenimos la división por cero teniendo en cuenta que la señal puede ser corta.
@@ -294,7 +294,7 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
             tramo_temporal = t[indice_inicio:indice_final]
             db = envolvente_ri_banda[indice_inicio:indice_final]
 
-            m, b, R_2 = regresion_lineal(tramo_temporal, db)
+            m, b, r_2 = regresion_lineal(tramo_temporal, db)
 
             extrapolacion = (-60.0) / m if m != 0 else None
 
@@ -309,9 +309,10 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
 
     return resultados
 
+"""
 
 def metodo_lundeby(ri: np.ndarray, fs: int) -> int:
-    """Estima el punto de truncamiento de la RI (metodo de Lundeby).
+    Estima el punto de truncamiento de la RI (metodo de Lundeby).
 
     Parameters
     ----------
@@ -332,7 +333,7 @@ def metodo_lundeby(ri: np.ndarray, fs: int) -> int:
     References
     ----------
     [1] Lundeby, A. et al. (1995). "Uncertainties of measurements in room acoustics." Acta Acustica.
-    """
+    
 
     # Prevención: evitar ceros absolutos para el cálculo de logaritmos
     eps = np.finfo(float).eps
@@ -441,3 +442,5 @@ def metodo_lundeby(ri: np.ndarray, fs: int) -> int:
     trunc_sample = max(0, min(trunc_sample, len(ri) - 1))
 
     return trunc_sample, float(noise_level)
+
+"""

@@ -29,8 +29,8 @@ def generar_ruido_rosa(duracion: float, fs: int) -> np.ndarray:
 
     # Generamos un ruido blanco de la duración deseada
 
-    N = int(duracion * fs)
-    ruido_blanco = np.random.randn(N)
+    n = int(duracion * fs)
+    ruido_blanco = np.random.randn(n)
 
     # Aplicar la transformada de Fourier a través de la funcion (np.fft.rfft)
 
@@ -38,7 +38,7 @@ def generar_ruido_rosa(duracion: float, fs: int) -> np.ndarray:
 
     # Creamos un vector de frecuencias correspondiente.
 
-    frecuencias = np.fft.rfftfreq(N, d=1/fs)
+    frecuencias = np.fft.rfftfreq(n, d=1/fs)
 
     # Dividimos cada componente por sqrt(f) (omitir f=0 para evitar división por cero)
 
@@ -48,7 +48,7 @@ def generar_ruido_rosa(duracion: float, fs: int) -> np.ndarray:
 
     # Aplicamos la transformada inversa (np.fft.irfft)
     # Se especifica n=N para garantizar que la longitud de salida sea exactamente la requerida
-    ruido_rosa = np.fft.irfft(espectro_escalado, n=N)
+    ruido_rosa = np.fft.irfft(espectro_escalado, n = n)
 
     # Normalizamos la señal resultante al rango [-1, 1]
     max_abs = np.max(np.abs(ruido_rosa))

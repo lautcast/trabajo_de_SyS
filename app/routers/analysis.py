@@ -45,7 +45,7 @@ async def analyze_impulse_response_file(file: UploadFile = File(...)):
             temp_audio.write(contenido)
             ruta_temporal = temp_audio.name
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error guardando el archivo temporal: {e}")
+        raise HTTPException(status_code=500, detail=f"Error guardando el archivo temporal: {e}") from e
 
     try:
         # 3. Usamos TU función cargar_audio pasándole la ruta del archivo temporal
@@ -71,9 +71,9 @@ async def analyze_impulse_response_file(file: UploadFile = File(...)):
         )
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Fallo en el motor de análisis: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Fallo en el motor de análisis: {str(e)}") from e
 
     finally:
         # 8. LIMPIEZA: Siempre borramos el archivo temporal para no llenar la compu de basura

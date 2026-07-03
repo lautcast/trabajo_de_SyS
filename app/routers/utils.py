@@ -1,26 +1,19 @@
 "Milestone 3: Endpoints de utilidades"
 
 
+import os
+import shutil
+import tempfile
+from pathlib import Path
+
 import numpy as np
-from fastapi import APIRouter
+from fastapi import APIRouter, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from app.services.acoustic_parameters import integral_schroeder, suavizar_signal
 from app.services.signal_utils import a_escala_log, cargar_audio
 
 router = APIRouter()
-
-# router.get para la funcion sintetizar_ri.
-
-import os
-import shutil
-import tempfile
-from pathlib import Path
-
-from fastapi import APIRouter, File, HTTPException, UploadFile
-
-# router = APIRouter()
-
 
 @router.post("/cargar-audio", summary="Subir y analizar archivo de audio")
 async def post_cargar_audio(
@@ -82,11 +75,11 @@ async def post_cargar_audio(
 
     except ValueError as e:
         # Si tu función lanza un ValueError (ej. archivo corrupto), devolvemos Error 400
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
-    except FileNotFoundError:
+    except FileNotFoundError as e:
         # Si por alguna razón falla la ruta
-        raise HTTPException(status_code=500, detail="Error interno al manejar el archivo temporal.")
+        raise HTTPException(status_code=500, detail="Error interno al manejar el archivo temporal.") from e
 
     finally:
         # 6. LIMPIEZA: Siempre borramos el archivo temporal para no llenar el disco del servidor
@@ -130,7 +123,7 @@ def convertir_a_escala_logartimica(request: LogScaleRequest):
 
     except Exception as e:
         # Por si ocurre algún error matemático imprevisto
-        raise HTTPException(status_code=500, detail=f"Error en la conversión a dB: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error en la conversión a dB: {str(e)}") from e
 
 class SmoothingRequest(BaseModel):
     signal_in: list[float] = Field(..., description="Arreglo de la señal de entrada (array 1D)")
@@ -166,10 +159,10 @@ def procesar_suavizado(request: SmoothingRequest):
 
     except ValueError as e:
         # Este except agarra exactamente el ValueError que escribiste al final de tu función
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         # Para cualquier otro error matemático no previsto
-        raise HTTPException(status_code=500, detail=f"Error inesperado en el suavizado: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error inesperado en el suavizado: {str(e)}") from e
 
 @router.post("/schroeder", response_model=SchroederResponse, summary="Calcular Integral de Schroeder")
 def procesar_schroeder(request: SchroederRequest):
@@ -190,5 +183,5 @@ def procesar_schroeder(request: SchroederRequest):
         return SchroederResponse(edc_db=edc_resultado.tolist())
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al calcular la integral de Schroeder: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error al calcular la integral de Schroeder: {str(e)}") from e
 

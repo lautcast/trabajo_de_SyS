@@ -47,7 +47,7 @@ def calcular_parametros_bandas_endpoint(request: AcousticsRequest):
         return diccionario_resultados
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error procesando parámetros acústicos: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error procesando parámetros acústicos: {str(e)}") from e
 
 @router.post("/parameters", response_model=AcousticsBroadbandResponse, summary="Calcular Parámetros Globales (Broadband)")
 def calcular_parametros_global_endpoint(request: AcousticsRequest):
@@ -64,14 +64,14 @@ def calcular_parametros_global_endpoint(request: AcousticsRequest):
         energia_total = np.sum(ri_cuadrado)
 
         # D50 Global
-        N50 = int(0.050 * fs)
-        energia_50 = np.sum(ri_cuadrado[:N50])
+        n50 = int(0.050 * fs)
+        energia_50 = np.sum(ri_cuadrado[:n50])
         d50 = float((energia_50 / energia_total) * 100) if energia_total > 0 else 0.0
 
         # C80 Global
-        N80 = int(0.080 * fs)
-        energia_80 = np.sum(ri_cuadrado[:N80])
-        energia_tardia_80 = np.sum(ri_cuadrado[N80:])
+        n80 = int(0.080 * fs)
+        energia_80 = np.sum(ri_cuadrado[:n80])
+        energia_tardia_80 = np.sum(ri_cuadrado[n80:])
         if energia_80 > 0 and energia_tardia_80 > 0:
             c80 = float(10 * np.log10(energia_80 / energia_tardia_80))
         else:
@@ -96,7 +96,7 @@ def calcular_parametros_global_endpoint(request: AcousticsRequest):
                 return None
             tramo_temporal = t[indice_inicio:indice_final]
             db = envolvente[indice_inicio:indice_final]
-            m, b, R_2 = regresion_lineal(tramo_temporal, db)
+            m, b, r_2 = regresion_lineal(tramo_temporal, db)
             return float((-60.0) / m) if m != 0 else None
 
         edt = calcular_tx(indice_0, indice_10)
@@ -115,4 +115,4 @@ def calcular_parametros_global_endpoint(request: AcousticsRequest):
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error procesando parámetros globales: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error procesando parámetros globales: {str(e)}") from e

@@ -84,7 +84,6 @@ class SintetizarRIRequest(BaseModel):
                 "1000.0": 1.2,
                 "2000.0": 1.0,
                 "4000.0": 0.8,
-                "4000.0": 0.8,
             }
         },
     )

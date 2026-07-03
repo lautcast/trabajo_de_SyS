@@ -53,7 +53,7 @@ def filtrar_audio_por_banda(request: FilterBandRequest):
 
     except ValueError as e:
         # Si el usuario mandó una frecuencia inválida, atrapamos TU error y devolvemos un Bad Request (400)
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         # Cualquier otro error matemático inesperado
-        raise HTTPException(status_code=500, detail=f"Error interno en el filtrado: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno en el filtrado: {str(e)}") from e
