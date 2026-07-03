@@ -51,7 +51,7 @@ def suavizar_signal(signal: np.ndarray, ventana: int|str = 'hilbert') -> np.ndar
         # Aplicamos la funcion signal.hilbert() de scipy para obtener la señal analítica
         # que es igual a la suma de la señal real con la transformada de Hilbert de la misma.
 
-        analitica = hilbert(signal)
+        analitica = np.asarray(hilbert(signal))
 
         # Para calcular la envolvente de la señal real, calculamos la magnitud de la señal analítica
 
@@ -197,7 +197,7 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
 
         # Filatramos la RI en la banda de la frecuencia central correspondiente.
 
-        ri_banda = filtro_octava(ri, fc=f, fs=fs, grado = 4)
+        ri_banda = filtro_octava(ri, fc=f, fs=fs, orden = 4)
 
         # Calculamos la energía total a partir de la energía instantánea de cada muestra.
 
@@ -293,7 +293,7 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
             tramo_temporal = t[indice_inicio:indice_final]
             db = envolvente_ri_banda[indice_inicio:indice_final]
 
-            m, b, R_2 = regresion_lineal(tramo_temporal, db, 1)
+            m, b, R_2 = regresion_lineal(tramo_temporal, db)
 
             extrapolacion = (-60.0) / m if m != 0 else None
 
