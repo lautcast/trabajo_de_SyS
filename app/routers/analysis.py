@@ -30,11 +30,11 @@ async def analyze_impulse_response_file(file: UploadFile = File(...)):
     """
     # 1. Validamos que el archivo tenga nombre y revisamos su extensión
     if not file.filename:
-        raise HTTPException(status_code=400, detail="No se proporcionó un nombre de archivo válido.")
+        raise HTTPException(status_code=422, detail="No se proporcionó un nombre de archivo válido.")
 
     extension = Path(file.filename).suffix.lower()
     if extension not in ['.wav', '.flac']:
-        raise HTTPException(status_code=400, detail="El archivo debe ser .wav o .flac")
+        raise HTTPException(status_code=422, detail="El archivo debe ser .wav o .flac")
 
     # 2. Guardamos el archivo subido en un archivo TEMPORAL seguro
     # Esto es obligatorio porque tu función 'cargar_audio' pide una 'ruta' en el disco duro.
@@ -71,7 +71,7 @@ async def analyze_impulse_response_file(file: UploadFile = File(...)):
         )
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
+        raise HTTPException(status_code=422, detail=str(e)) from e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Fallo en el motor de análisis: {str(e)}") from e
 
