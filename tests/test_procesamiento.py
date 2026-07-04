@@ -245,7 +245,7 @@ class TestDeconvolución:
 
 class TestFiltroOctava:
 
-    def test_filtro_octava_frecuencia_central():
+    def test_filtro_octava_frecuencia_central(self):
         """Verificar que el filtro pasa correctamente la frecuencia central."""
 
         fs = 48000
@@ -268,7 +268,7 @@ class TestFiltroOctava:
         #La ganancia en la banda de paso debería ser prácticamente 0 dB, no tiene atenuación significativa. Permitimos una tolerancia de ±0.5 dB.
         assert abs(ganancia_db) < 0.5, f"El filtro atenuó la frecuencia central: {ganancia_db:.2f} dB"
 
-    def test_filtro_octava_atenuacion():
+    def test_filtro_octava_atenuacion(self):
         """Verificar atenuacion fuera de banda."""
 
         fs = 48000
@@ -290,7 +290,7 @@ class TestFiltroOctava:
         #Exigimos que la señal haya disminuido mas de 40dB
         assert ganancia_db < -40.0, f"El filtro dejó pasar demasiada señal fuera de banda: {ganancia_db:.2f} dB"
 
-    def test_filtro_octava_respuesta_frecuencia():
+    def test_filtro_octava_respuesta_frecuencia(self):
         """Verificar que la respuesta cumple -3 dB en frecuencias de corte."""
 
         fs = 48000
