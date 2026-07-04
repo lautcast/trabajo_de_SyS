@@ -311,8 +311,8 @@ class TestFiltroOctava:
     
         #Asserts de finf y fsup (-3 dB, tol 1 dB)
         #Como en la función se utilizó `sosfiltfilt` pasa la señal 2 veces por el filtro, por lo que la atenuación real se va al doble va a dar aprox -6 dB
-        assert abs(ganancia_db[1] - (-3.0)) < 1.0, f"Fallo en f_inf: {ganancia_db[1]:.2f} dB"
-        assert abs(ganancia_db[2] - (-3.0)) < 1.0, f"Fallo en f_sup: {ganancia_db[2]:.2f} dB"
+        assert abs(ganancia_db[1] - (-6.0)) < 1.0, f"Fallo en f_inf: {ganancia_db[1]:.2f} dB"
+        assert abs(ganancia_db[2] - (-6.0)) < 1.0, f"Fallo en f_sup: {ganancia_db[2]:.2f} dB"
     
         #Asserts a una octava de distancia (> 20 dB de atenuación -> < -20 dB de ganancia)
         assert ganancia_db[3] < -20.0, f"Fallo atenuación en fc/2: {ganancia_db[3]:.2f} dB"
