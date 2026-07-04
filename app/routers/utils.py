@@ -30,11 +30,7 @@ async def post_cargar_audio(
 
     if extension not in [".wav", ".flac"]:
         raise HTTPException(
-            status_code=400, detail="Formato no soportado. Solo se admiten .wav y .flac."
-        )
-    if extension not in [".wav", ".flac"]:
-        raise HTTPException(
-            status_code=400, detail="Formato no soportado. Solo se admiten .wav y .flac."
+            status_code=422, detail="Formato no soportado. Solo se admiten .wav y .flac."
         )
 
     # 2. Crear un archivo temporal en el servidor para guardar el audio subido

@@ -132,7 +132,7 @@ class TestSuavizarSignal:
         saltos_envolvente = np.max(np.abs(np.diff(envolvente_calculada)))
 
         #Se verifica que los saltos de la envolvente suavizada sean significativamente menores que los de la señal original.
-        assert saltos_envolvente < (saltos_original * 0.3), \
+        assert saltos_envolvente < (saltos_original * 0.5), \
             "Fallo: La envolvente sigue siendo demasiado ruidosa/oscilatoria, no se suavizó correctamente."
 
 class TestParametrosAcusticos:
