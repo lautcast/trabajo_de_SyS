@@ -1,12 +1,15 @@
 """Tests para los servicios de procesamiento de senales (Milestone 2)."""
 
 
+import signal
+
 import numpy as np
 import pytest as pytest
 from scipy.io import wavfile
 from scipy.signal import butter, fftconvolve, filtfilt
 
 from app.routers.signals import generar_sine_sweep
+from app.services.filter import filtro_octava
 from app.services.signal_utils import (
     a_escala_log,
     cargar_audio,
@@ -245,74 +248,74 @@ class TestFiltroOctava:
     def test_filtro_octava_frecuencia_central():
         """Verificar que el filtro pasa correctamente la frecuencia central."""
 
-    fs = 48000
-    fc = 1000.0
+        fs = 48000
+        fc = 1000.0
     
-    #Generamos 1 segundo de señal en la frecuencia central
-    t = np.arange(0, 1.0, 1/fs)
-    seno_in = np.sin(2 * np.pi * fc * t)
+        #Generamos 1 segundo de señal en la frecuencia central
+        t = np.arange(0, 1.0, 1/fs)
+        seno_in = np.sin(2 * np.pi * fc * t)
     
-    #Filtro
-    seno_out = filtro_octava(seno_in, fc, fs)
+        #Filtro
+        seno_out = filtro_octava(seno_in, fc, fs)
     
-    #Comparamos la energía RMS de entrada vs salida
-    rms_in = np.sqrt(np.mean(seno_in**2))
-    rms_out = np.sqrt(np.mean(seno_out**2))
+        #Comparamos la energía RMS de entrada vs salida
+        rms_in = np.sqrt(np.mean(seno_in**2))
+        rms_out = np.sqrt(np.mean(seno_out**2))
     
-    ganancia_lineal = rms_out / rms_in
-    ganancia_db = 20 * np.log10(ganancia_lineal)
+        ganancia_lineal = rms_out / rms_in
+        ganancia_db = 20 * np.log10(ganancia_lineal)
     
-    #La ganancia en la banda de paso debería ser prácticamente 0 dB, no tiene atenuación significativa. Permitimos una tolerancia de ±0.5 dB.
-    assert abs(ganancia_db) < 0.5, f"El filtro atenuó la frecuencia central: {ganancia_db:.2f} dB"
+        #La ganancia en la banda de paso debería ser prácticamente 0 dB, no tiene atenuación significativa. Permitimos una tolerancia de ±0.5 dB.
+        assert abs(ganancia_db) < 0.5, f"El filtro atenuó la frecuencia central: {ganancia_db:.2f} dB"
 
     def test_filtro_octava_atenuacion():
         """Verificar atenuacion fuera de banda."""
 
-    fs = 48000
-    fc = 1000.0
+        fs = 48000
+        fc = 1000.0
     
-    #Generamos un seno a 2 octavas hacia arriba para asegurar atenuación bruta
-    frec_fuera = fc * 4.0 
-    t = np.arange(0, 1.0, 1/fs)
-    seno_fuera = np.sin(2 * np.pi * frec_fuera * t)
+        #Generamos un seno a 2 octavas hacia arriba para asegurar atenuación bruta
+        frec_fuera = fc * 4.0 
+        t = np.arange(0, 1.0, 1/fs)
+        seno_fuera = np.sin(2 * np.pi * frec_fuera * t)
     
-    seno_out = filtro_octava(seno_fuera, fc, fs)
+        seno_out = filtro_octava(seno_fuera, fc, fs)
     
-    rms_in = np.sqrt(np.mean(seno_fuera**2))
-    rms_out = np.sqrt(np.mean(seno_out**2))
+        rms_in = np.sqrt(np.mean(seno_fuera**2))
+        rms_out = np.sqrt(np.mean(seno_out**2))
     
-    ganancia_lineal = rms_out / (rms_in + 1e-12)
-    ganancia_db = 20 * np.log10(ganancia_lineal + 1e-12)
+        ganancia_lineal = rms_out / (rms_in + 1e-12)
+        ganancia_db = 20 * np.log10(ganancia_lineal + 1e-12)
     
-    #Exigimos que la señal haya disminuido mas de 40dB
-    assert ganancia_db < -40.0, f"El filtro dejó pasar demasiada señal fuera de banda: {ganancia_db:.2f} dB"
+        #Exigimos que la señal haya disminuido mas de 40dB
+        assert ganancia_db < -40.0, f"El filtro dejó pasar demasiada señal fuera de banda: {ganancia_db:.2f} dB"
 
     def test_filtro_octava_respuesta_frecuencia():
         """Verificar que la respuesta cumple -3 dB en frecuencias de corte."""
 
-    fs = 48000
-    fc = 1000.0
-    f_inf = fc / np.sqrt(2)
-    f_sup = fc * np.sqrt(2)
+        fs = 48000
+        fc = 1000.0
+        f_inf = fc / np.sqrt(2)
+        f_sup = fc * np.sqrt(2)
     
-    #Se calcula la respuesta al impulso del filtro como caja negra
-    impulso = np.zeros(8192)
-    impulso[4096] = 1.0  # Centrado para evitar enredos de fase
-    respuesta_impulso = filtro_octava(impulso, fc, fs)
+        #Se calcula la respuesta al impulso del filtro como caja negra
+        impulso = np.zeros(8192)
+        impulso[4096] = 1.0  # Centrado para evitar enredos de fase
+        respuesta_impulso = filtro_octava(impulso, fc, fs)
     
-    #Usamos freqz pidiéndole EXACTAMENTE las frecuencias de interés
-    frecuencias_test = [fc, f_inf, f_sup, fc / 2.0, fc * 2.0]
-    w, h = signal.freqz(respuesta_impulso, a=1, worN=frecuencias_test, fs=fs)
-    ganancia_db = 20 * np.log10(np.abs(h) + 1e-12)
+        #Usamos freqz pidiéndole EXACTAMENTE las frecuencias de interés
+        frecuencias_test = [fc, f_inf, f_sup, fc / 2.0, fc * 2.0]
+        w, h = signal.freqz(respuesta_impulso, a=1, worN=frecuencias_test, fs=fs)
+        ganancia_db = 20 * np.log10(np.abs(h) + 1e-12)
     
-    #Assert para la fc (0 dB, tolerancia 0.5 dB según consigna)
-    assert abs(ganancia_db[0] - 0.0) < 0.5, f"Fallo ganancia en fc: {ganancia_db[0]:.2f} dB"
+        #Assert para la fc (0 dB, tolerancia 0.5 dB según consigna)
+        assert abs(ganancia_db[0] - 0.0) < 0.5, f"Fallo ganancia en fc: {ganancia_db[0]:.2f} dB"
     
-    #Asserts de finf y fsup (-3 dB, tol 1 dB)
-    #Como en la función se utilizó `sosfiltfilt` pasa la señal 2 veces por el filtro, por lo que la atenuación real se va al doble va a dar aprox -6 dB
-    assert abs(ganancia_db[1] - (-3.0)) < 1.0, f"Fallo en f_inf: {ganancia_db[1]:.2f} dB"
-    assert abs(ganancia_db[2] - (-3.0)) < 1.0, f"Fallo en f_sup: {ganancia_db[2]:.2f} dB"
+        #Asserts de finf y fsup (-3 dB, tol 1 dB)
+        #Como en la función se utilizó `sosfiltfilt` pasa la señal 2 veces por el filtro, por lo que la atenuación real se va al doble va a dar aprox -6 dB
+        assert abs(ganancia_db[1] - (-3.0)) < 1.0, f"Fallo en f_inf: {ganancia_db[1]:.2f} dB"
+        assert abs(ganancia_db[2] - (-3.0)) < 1.0, f"Fallo en f_sup: {ganancia_db[2]:.2f} dB"
     
-    #Asserts a una octava de distancia (> 20 dB de atenuación -> < -20 dB de ganancia)
-    assert ganancia_db[3] < -20.0, f"Fallo atenuación en fc/2: {ganancia_db[3]:.2f} dB"
-    assert ganancia_db[4] < -20.0, f"Fallo atenuación en 2fc: {ganancia_db[4]:.2f} dB"
+        #Asserts a una octava de distancia (> 20 dB de atenuación -> < -20 dB de ganancia)
+        assert ganancia_db[3] < -20.0, f"Fallo atenuación en fc/2: {ganancia_db[3]:.2f} dB"
+        assert ganancia_db[4] < -20.0, f"Fallo atenuación en 2fc: {ganancia_db[4]:.2f} dB"
