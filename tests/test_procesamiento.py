@@ -1,8 +1,6 @@
 """Tests para los servicios de procesamiento de senales (Milestone 2)."""
 
 
-import signal
-
 import numpy as np
 import pytest as pytest
 from scipy.io import wavfile
