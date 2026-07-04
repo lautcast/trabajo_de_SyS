@@ -7,7 +7,7 @@ import numpy as np
 import pytest as pytest
 from scipy.io import wavfile
 from scipy.signal import butter, fftconvolve, filtfilt
-
+import scipy.signal as signal
 from app.routers.signals import generar_sine_sweep
 from app.services.filter import filtro_octava
 from app.services.signal_utils import (
