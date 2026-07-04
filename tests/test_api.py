@@ -44,7 +44,7 @@ class TestAPIEndpointsyHealthCheck:
          #Verificamos que la API lo haya procesado y devuelto un 200 OK
         assert response.status_code == 200
          #Verificamos que devuelva los parámetros, por ejemplo, el C80.
-        assert "C80" in response.json()
+        assert "C80" in response.json()["parametros_por_banda"]
 
     def test_signals_pink_noise_endpoint(self):
          """Verificar que /api/v1/signals/pink-noise genera y devuelve un WAV valido."""
