@@ -42,7 +42,6 @@ def calcular_parametros_bandas_endpoint(request: AcousticsRequest):
     senal_numpy = np.array(request.ri, dtype=np.float64)
 
     try:
-        # Llamamos a tu super-función
         diccionario_resultados = calcular_parametros_acusticos(ri=senal_numpy, fs=request.fs)
         return diccionario_resultados
 

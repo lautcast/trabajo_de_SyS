@@ -39,21 +39,28 @@ def filtrar_audio_por_banda(request: FilterBandRequest):
     Recibe una señal cruda en formato JSON, le aplica un filtro IIR Butterworth
     centrado en 'fc' y devuelve la señal procesada.
     """
-    # 1. Transformar JSON web (List) a matemática pura (NumPy Array)
+
+    # Transformar JSON web (List) a matemática pura (NumPy Array)
+
     senal_numpy = np.array(request.signal_in, dtype=np.float64)
 
     try:
-        # 2. Llamar a tu función
-        senal_filtrada = filtro_octava(
-            signal_in=senal_numpy, fc=request.fc, fs=request.fs, orden=request.orden
-        )
+        # Llamamos a filtro_octava
 
-        # 3. Transformar matemática pura (NumPy Array) de vuelta a JSON (List)
+        senal_filtrada = filtro_octava(signal_in=senal_numpy, fc=request.fc, fs=request.fs, orden=request.orden)
+
+        # Transformamos la  matemática pura (NumPy Array) de vuelta a JSON (List)
+
         return FilterBandResponse(signal_out=senal_filtrada.tolist())
 
     except ValueError as e:
-        # Si el usuario mandó una frecuencia inválida, atrapamos TU error y devolvemos un Bad Request (400)
+
+        # Si el usuario mandó una frecuencia inválida, tomamos el error y se devuelve un Bad Request (400).
+
         raise HTTPException(status_code=400, detail=str(e)) from e
+    
     except Exception as e:
-        # Cualquier otro error matemático inesperado
+
+        # Cualquier otro error matemático inesperado.
+
         raise HTTPException(status_code=500, detail=f"Error interno en el filtrado: {str(e)}") from e
