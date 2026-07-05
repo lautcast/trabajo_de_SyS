@@ -183,7 +183,7 @@ class TestGenerarSineSweep:
         assert frec_fin > 10000, f"Fallo: Termina con frecuencia muy baja ({frec_fin} Hz)"
 
 class TestReproducirYGrabar:
-    def test_reproducir_y_grabar_padding_y_dimensiones():
+    def test_reproducir_y_grabar_padding_y_dimensiones(self):
         """Verifica que la señal de salida se ensamble correctamente con pre-roll y silencios."""
         fs = 1000  #Frecuencia baja para agilizar el procesamiento del test
         duracion_grabacion = 3.0  # 3 segundos = 3000 muestras
@@ -221,7 +221,7 @@ class TestReproducirYGrabar:
             #Chequeamos la cola de reverberación (el resto vuelve a ser cero)
             assert np.all(vector_enviado_a_hardware[1500:] == 0)
 
-    def test_reproducir_y_grabar_error_duracion_insuficiente():
+    def test_reproducir_y_grabar_error_duracion_insuficiente(self):
         """Comprueba que la función rechaza ejecuciones donde la grabación no cubre el estímulo."""
         fs = 1000
         signal_larga = np.ones(2000) #2 segundos de señal
