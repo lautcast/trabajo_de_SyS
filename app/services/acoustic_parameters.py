@@ -308,9 +308,6 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
         resultados['T30'][f] = calcular_tx(indice_5, indice_35)
 
     return resultados
-
-import numpy as np
-
 def calcular_parametros_globales(ri: np.ndarray, fs: int) -> dict:
     """
     Calcula los parámetros acústicos para la señal completa sin aplicar filtrado.
@@ -371,9 +368,10 @@ def calcular_parametros_globales(ri: np.ndarray, fs: int) -> dict:
         "C80": c80
     }
 
-"""
+
 
 def metodo_lundeby(ri: np.ndarray, fs: int) -> int:
+    """
     Estima el punto de truncamiento de la RI (metodo de Lundeby).
 
     Parameters
@@ -395,7 +393,7 @@ def metodo_lundeby(ri: np.ndarray, fs: int) -> int:
     References
     ----------
     [1] Lundeby, A. et al. (1995). "Uncertainties of measurements in room acoustics." Acta Acustica.
-    
+    """
 
     # Prevención: evitar ceros absolutos para el cálculo de logaritmos
     eps = np.finfo(float).eps
@@ -505,4 +503,4 @@ def metodo_lundeby(ri: np.ndarray, fs: int) -> int:
 
     return trunc_sample, float(noise_level)
 
-"""
+
