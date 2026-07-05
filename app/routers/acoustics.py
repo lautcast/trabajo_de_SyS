@@ -2,10 +2,16 @@
 
 
 import numpy as np
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from pydantic import BaseModel, Field
+import tempfile
+from pathlib import Path
+import os
 
-from app.services.acoustic_parameters import calcular_parametros_acusticos, integral_schroeder, regresion_lineal
+# Importamos las funciones principales desde servicios. 
+# Ya no necesitamos importar integral_schroeder ni regresion_lineal acá.
+from app.services.acoustic_parameters import calcular_parametros_acusticos, calcular_parametros_globales
+from app.routers.analysis import procesar_audio_subido
 
 router = APIRouter()
 
@@ -15,7 +21,6 @@ class AcousticsRequest(BaseModel):
     fs: int = Field(48000, description="Frecuencia de muestreo en Hz")
 
 class AcousticsByBandsResponse(BaseModel):
-    # Dict[str, float] permite devolver un objeto JSON como: {"1000.0": 1.5, "2000.0": 1.2}
     EDT: dict[str, float | None]
     T10: dict[str, float | None]
     T20: dict[str, float | None]
@@ -31,22 +36,33 @@ class AcousticsBroadbandResponse(BaseModel):
     D50: float | None = Field(None, description="Definición global (%)")
     C80: float | None = Field(None, description="Claridad global (dB)")
 
-@router.post("/parameters/by-bands", response_model=AcousticsByBandsResponse, summary="Calcular Parámetros por Bandas")
-def calcular_parametros_bandas_endpoint(request: AcousticsRequest):
+
+@router.post("/parameters/by-bands", response_model=AcousticsByBandsResponse, summary="Calcular Parámetros por Bandas (Sube WAV)")
+async def calcular_parametros_bandas_endpoint(file: UploadFile = File(...)):
     """
-    Parámetros Acústicos por Bandas de Octava:
-    Toma una Respuesta al Impulso, la filtra iterativamente en las bandas de octava 
-    normalizadas (IEC 61260) y devuelve los parámetros D50, C80, EDT, T10, T20 y T30 
-    para cada frecuencia central.
+    Sube un archivo de audio (.wav o .flac).
+    La API lo filtra en bandas de octava y devuelve los parámetros (EDT, T20, etc.) por frecuencia.
     """
-    senal_numpy = np.array(request.ri, dtype=np.float64)
+    senal_numpy, fs, ruta_temporal = await procesar_audio_subido(file)
 
     try:
-        diccionario_resultados = calcular_parametros_acusticos(ri=senal_numpy, fs=request.fs)
-        return diccionario_resultados
+        # 1. Calculamos la matemática
+        resultados_acusticos = calcular_parametros_acusticos(ri=senal_numpy, fs=fs)
+        
+        # 2. Convertimos las frecuencias (números) a texto (strings) para que el JSON no explote
+        resultados_formateados = {}
+        for parametro, valores in resultados_acusticos.items():
+            resultados_formateados[parametro] = {str(frec): val for frec, val in valores.items()}
 
+        # 3. Devolvemos el diccionario ya formateado
+        return resultados_formateados
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error procesando parámetros acústicos: {str(e)}") from e
+    finally:
+        if os.path.exists(ruta_temporal):
+            os.remove(ruta_temporal)
+
 
 @router.post("/parameters", response_model=AcousticsBroadbandResponse, summary="Calcular Parámetros Globales (Broadband)")
 def calcular_parametros_global_endpoint(request: AcousticsRequest):
@@ -58,60 +74,12 @@ def calcular_parametros_global_endpoint(request: AcousticsRequest):
     fs = request.fs
 
     try:
-        # 1. Cálculos de Energía (Sin filtros)
-        ri_cuadrado = ri ** 2
-        energia_total = np.sum(ri_cuadrado)
-
-        # D50 Global
-        n50 = int(0.050 * fs)
-        energia_50 = np.sum(ri_cuadrado[:n50])
-        d50 = float((energia_50 / energia_total) * 100) if energia_total > 0 else 0.0
-
-        # C80 Global
-        n80 = int(0.080 * fs)
-        energia_80 = np.sum(ri_cuadrado[:n80])
-        energia_tardia_80 = np.sum(ri_cuadrado[n80:])
-        if energia_80 > 0 and energia_tardia_80 > 0:
-            c80 = float(10 * np.log10(energia_80 / energia_tardia_80))
-        else:
-            c80 = None
-
-        # 2. Tiempos de Reverberación Globales
-        envolvente = integral_schroeder(ri)
-        t = np.arange(len(ri)) / fs
-
-        def buscar_indice(array, value) -> int:
-            return int((np.abs(array - value)).argmin())
-
-        indice_0 = buscar_indice(envolvente, 0)
-        indice_5 = buscar_indice(envolvente, -5)
-        indice_10 = buscar_indice(envolvente, -10)
-        indice_15 = buscar_indice(envolvente, -15)
-        indice_25 = buscar_indice(envolvente, -25)
-        indice_35 = buscar_indice(envolvente, -35)
-
-        def calcular_tx(indice_inicio, indice_final):
-            if indice_final <= indice_inicio or (indice_final - indice_inicio) < 2:
-                return None
-            tramo_temporal = t[indice_inicio:indice_final]
-            db = envolvente[indice_inicio:indice_final]
-            m, b, r_2 = regresion_lineal(tramo_temporal, db)
-            return float((-60.0) / m) if m != 0 else None
-
-        edt = calcular_tx(indice_0, indice_10)
-        t10 = calcular_tx(indice_5, indice_15)
-        t20 = calcular_tx(indice_5, indice_25)
-        t30 = calcular_tx(indice_5, indice_35)
-
-        # 3. Retornamos el modelo con los resultados
-        return AcousticsBroadbandResponse(
-            EDT=edt,
-            T10=t10,
-            T20=t20,
-            T30=t30,
-            D50=d50,
-            C80=c80
-        )
+        # Llamamos al servicio, que nos devuelve un diccionario listo para usar
+        resultados_globales = calcular_parametros_globales(ri=ri, fs=fs)
+        
+        # Desempaquetamos el diccionario (**) directamente en el modelo de Pydantic
+        return AcousticsBroadbandResponse(**resultados_globales)
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error procesando parámetros globales: {str(e)}") from e
+    
