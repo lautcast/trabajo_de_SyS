@@ -1,6 +1,5 @@
 import numpy as np
 import sounddevice as sd
-from pathlib import Path
 
 def reproducir_y_grabar(signal: np.ndarray, fs: int, duracion_grabacion: float, pre_roll: float = 0.5) -> np.ndarray:
     """
@@ -59,9 +58,9 @@ def reproducir_y_grabar(signal: np.ndarray, fs: int, duracion_grabacion: float, 
         raise RuntimeError(
             f"Fallo de hardware de audio: No se detectaron dispositivos de entrada/salida válidos "
             f"o la configuración de hardware es incompatible. Detalles: {e}"
-        )
+        ) from e
     except Exception as e:
-        raise RuntimeError(f"Error inesperado durante la ejecución de playrec: {e}")
+        raise RuntimeError(f"Error inesperado durante la ejecución de playrec: {e}") from e
 
     # 4. Post-procesamiento del resultado
     # Sounddevice devuelve una matriz (muestras x canales). Aplanamos a un vector 1D mono.
