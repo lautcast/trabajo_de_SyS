@@ -308,6 +308,65 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
         resultados['T30'][f] = calcular_tx(indice_5, indice_35)
 
     return resultados
+def calcular_parametros_globales(ri: np.ndarray, fs: int) -> dict:
+    """
+    Calcula los parámetros acústicos para la señal completa sin aplicar filtrado.
+    Retorna un diccionario con las métricas calculadas.
+    """
+    # 1. Cálculos de Energía
+    ri_cuadrado = ri ** 2
+    energia_total = np.sum(ri_cuadrado)
+
+    # D50 Global
+    n50 = int(0.050 * fs)
+    energia_50 = np.sum(ri_cuadrado[:n50])
+    d50 = float((energia_50 / energia_total) * 100) if energia_total > 0 else 0.0
+
+    # C80 Global
+    n80 = int(0.080 * fs)
+    energia_80 = np.sum(ri_cuadrado[:n80])
+    energia_tardia_80 = np.sum(ri_cuadrado[n80:])
+    if energia_80 > 0 and energia_tardia_80 > 0:
+        c80 = float(10 * np.log10(energia_80 / energia_tardia_80))
+    else:
+        c80 = None
+
+    # 2. Tiempos de Reverberación Globales
+    envolvente = integral_schroeder(ri)
+    t = np.arange(len(ri)) / fs
+
+    def buscar_indice(array, value) -> int:
+        return int((np.abs(array - value)).argmin())
+
+    indice_0 = buscar_indice(envolvente, 0)
+    indice_5 = buscar_indice(envolvente, -5)
+    indice_10 = buscar_indice(envolvente, -10)
+    indice_15 = buscar_indice(envolvente, -15)
+    indice_25 = buscar_indice(envolvente, -25)
+    indice_35 = buscar_indice(envolvente, -35)
+
+    def calcular_tx(indice_inicio, indice_final):
+        if indice_final <= indice_inicio or (indice_final - indice_inicio) < 2:
+            return None
+        tramo_temporal = t[indice_inicio:indice_final]
+        db = envolvente[indice_inicio:indice_final]
+        m, b, r_2 = regresion_lineal(tramo_temporal, db)
+        return float((-60.0) / m) if m != 0 else None
+
+    edt = calcular_tx(indice_0, indice_10)
+    t10 = calcular_tx(indice_5, indice_15)
+    t20 = calcular_tx(indice_5, indice_25)
+    t30 = calcular_tx(indice_5, indice_35)
+
+    # 3. Retornamos un diccionario con las claves idénticas al modelo Pydantic
+    return {
+        "EDT": edt,
+        "T10": t10,
+        "T20": t20,
+        "T30": t30,
+        "D50": d50,
+        "C80": c80
+    }
 
 def metodo_lundeby(ri: np.ndarray, fs: int) -> tuple[int, float]:
     """Determina el punto de truncamiento de la RI con el nivel de ruido usando el metodo de Lundeby.
