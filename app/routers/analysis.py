@@ -20,7 +20,7 @@ router = APIRouter()
 class LundebyResult(BaseModel):
     muestra_truncamiento: int = Field(..., description="Índice de la muestra de truncamiento")
     tiempo_segundos: float = Field(..., description="Tiempo exacto de truncamiento en segundos")
-    nivel_ruido_dB: float = Field(..., description="Nivel de ruido de fondo estimado en dB")
+    nivel_ruido_db: float = Field(..., description="Nivel de ruido de fondo estimado en dB")
 
 class AcousticsBroadbandResponse(BaseModel):
     EDT: float | None = Field(None, description="Early Decay Time global (segundos)")
@@ -79,7 +79,7 @@ async def procesar_audio_subido(file: UploadFile) -> tuple[np.ndarray, int, str]
 # 3. ENDPOINTS PRINCIPALES
 # ==========================================
 
-FRECUENCIAS_OCTAVA = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
+frecuencias_octava = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
 
 @router.post("/parameters/global", response_model=AcousticsBroadbandResponse, summary="Calcular Parámetros y Lundeby Global")
 async def calcular_parametros_global_endpoint(file: UploadFile = File(...)):
@@ -98,7 +98,7 @@ async def calcular_parametros_global_endpoint(file: UploadFile = File(...)):
         lundeby_data = LundebyResult(
             muestra_truncamiento=trunc_sample,
             tiempo_segundos=round(trunc_sample / fs, 4),
-            nivel_ruido_dB=round(noise_level, 2)
+            nivel_ruido_db=round(noise_level, 2)
         )
         
         # Combinamos y enviamos según el modelo
@@ -131,7 +131,7 @@ async def calcular_parametros_bandas_endpoint(file: UploadFile = File(...)):
         f_nyquist = fs / 2
         lundeby_por_banda = {}
         
-        for fc in FRECUENCIAS_OCTAVA:
+        for fc in frecuencias_octava:
             if (fc / np.sqrt(2)) >= f_nyquist:
                 continue
                 
@@ -144,7 +144,7 @@ async def calcular_parametros_bandas_endpoint(file: UploadFile = File(...)):
             lundeby_por_banda[clave_banda] = LundebyResult(
                 muestra_truncamiento=trunc_sample,
                 tiempo_segundos=round(trunc_sample / fs, 4),
-                nivel_ruido_dB=round(noise_level, 2)
+                nivel_ruido_db=round(noise_level, 2)
             )
             
         resultados_formateados["Lundeby"] = lundeby_por_banda

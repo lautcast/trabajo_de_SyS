@@ -423,7 +423,7 @@ def metodo_lundeby(ri: np.ndarray, fs: int) -> tuple[int, float]:
     intercept = 0.0
     
     #BUCLE ITERATIVO para refinar la estimación del nivel de ruido y el punto de truncamiento
-    for iteracion in range(max_iter):
+    for _ in range(max_iter):
         # Punto de cruce preliminar (ruido + 10 dB)
         threshold = noise_level + 10
         

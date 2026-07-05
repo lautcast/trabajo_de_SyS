@@ -4,8 +4,6 @@
 import numpy as np
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from pydantic import BaseModel, Field
-import tempfile
-from pathlib import Path
 import os
 
 # Importamos las funciones principales desde servicios. 
