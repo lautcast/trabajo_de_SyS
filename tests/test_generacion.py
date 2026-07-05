@@ -6,9 +6,7 @@ from scipy.signal import welch
 from unittest.mock import patch
 from app.services.pink_noise import generar_ruido_rosa
 from app.services.sine_sweep import generar_sine_sweep
-from app.services.audio.py import reproducir_y_grabar
-
-"""----------------------------------------------------------------------------------------------------------------------------------------------------------------------"""
+from app.services.audio import reproducir_y_grabar
 
 class TestGenerarRuidoRosa:
     """Tests para la funcion generar_ruido_rosa."""
@@ -94,10 +92,6 @@ class TestGenerarRuidoRosa:
         # Verificamos que la pendiente este cerca de -1.0
         assert np.isclose(pendiente, -1.0, atol=0.2), f"Fallo: Pendiente fue {pendiente:.2f}, se esperaba ~ -1.0"
 
-
-"""----------------------------------------------------------------------------------------------------------------------------------------------------------------------"""
-
-
 class TestGenerarSineSweep:
     """Tests para la funcion generar_sine_sweep."""
 
@@ -157,34 +151,34 @@ class TestGenerarSineSweep:
         fragmento_fin = sweep[-muestras_ventana:]
 
         #Función auxiliar para encontrar la frecuencia con más energía usando FFT
-        def obtener_frecuencia_dominante(senal_fragmento):
+        def obtener_frecuencia_dominante(senal_fragmento, fs):
 
             #Calculamos el espectro de frecuencias del fragmento
-        sweep, _ = generar_sine_sweep(20, 20000, duracion, fs)
+            sweep, _ = generar_sine_sweep(20, 20000, duracion, fs)
 
-        # Tomamos una ventana pequeña de muestras al inicio y al final (ej: 0.1 segundos)
+        #Tomamos una ventana pequeña de muestras al inicio y al final (ej: 0.1 segundos)
 
         muestras_ventana = int(0.1 * fs)                # En este caso, tomamos 4410 muestras
         fragmento_inicio = sweep[:muestras_ventana]     # Las primeras 4410 muestras.
         fragmento_fin = sweep[-muestras_ventana:]       # Las ultimas 4410 muestras.
 
         # Definimos una función auxiliar para encontrar la frecuencia con más energía usando FFT
-        def obtener_frecuencia_dominante(senal_fragmento):
+        def obtener_frecuencia_dominante(senal_fragmento, fs):
 
-            # Calculamos el espectro de frecuencias del fragmento
+            #Calculamos el espectro de frecuencias del fragmento
 
             espectro = np.abs(np.fft.rfft(senal_fragmento))
             frecuencias = np.fft.rfftfreq(len(senal_fragmento), 1/fs)
 
-            # Buscamos el índice donde el espectro tiene su pico máximo
+            #Buscamos el índice donde el espectro tiene su pico máximo
 
             indice_pico = np.argmax(espectro)
 
             return frecuencias[indice_pico]
 
         #Calculamos las frecuencias dominantes
-        frec_inicio = obtener_frecuencia_dominante(fragmento_inicio)
-        frec_fin = obtener_frecuencia_dominante(fragmento_fin)
+        frec_inicio = obtener_frecuencia_dominante(fragmento_inicio, fs)
+        frec_fin = obtener_frecuencia_dominante(fragmento_fin, fs)
 
         #Verificamos con Asserts que la frecuencia del final sea estrictamente mayor que la del inicio
         assert frec_fin > frec_inicio, "Fallo: La frecuencia no aumenta con el tiempo"
@@ -232,26 +226,13 @@ class TestReproducirYGrabar:
         #Chequeamos la cola de reverberación (el resto vuelve a ser cero)
         assert np.all(vector_enviado_a_hardware[1500:] == 0)
 
-
-def test_reproducir_y_grabar_error_duracion_insuficiente():
-    """Comprueba que la función rechaza ejecuciones donde la grabación no cubre el estímulo."""
-    fs = 1000
-    signal_larga = np.ones(2000) #2 segundos de señal
+    def test_reproducir_y_grabar_error_duracion_insuficiente():
+        """Comprueba que la función rechaza ejecuciones donde la grabación no cubre el estímulo."""
+        fs = 1000
+        signal_larga = np.ones(2000) #2 segundos de señal
     
-    #Se procura meter 0.5s de pre-roll + 2s de señal en una grabación de 1.5s, debe lanzar ValueError
-    with pytest.raises(ValueError):
-        reproducir_y_grabar(signal_larga, fs, duracion_grabacion=1.5, pre_roll=0.5)
-        # Calculamos las frecuencias dominantes
-
-        frec_inicio = obtener_frecuencia_dominante(fragmento_inicio)
-        frec_fin = obtener_frecuencia_dominante(fragmento_fin)
-
-        # Verificamos
-
-        assert frec_fin > frec_inicio, "Fallo: La frecuencia no aumenta con el tiempo"
-        assert frec_inicio < 1000, f"Fallo: Arranca con frecuencia muy alta ({frec_inicio} Hz)"
-
-
-"""----------------------------------------------------------------------------------------------------------------------------------------------------------------------"""
+        #Se procura meter 0.5s de pre-roll + 2s de señal en una grabación de 1.5s, debe lanzar ValueError
+        with pytest.raises(ValueError):
+            reproducir_y_grabar(signal_larga, fs, duracion_grabacion=1.5, pre_roll=0.5)
 
 
