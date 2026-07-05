@@ -31,7 +31,7 @@ dev = [
 ]
 
 [tool.ruff]
-line-length = 100
+line-length = 200
 target-version = "py312"
 
 [tool.ruff.lint]
@@ -45,6 +45,11 @@ select = [
     "B",   # flake8-bugbear
     "SIM", # flake8-simplify
 ]
+ignore = ["E501", "B008", "SIM108", "W291", "W293", "B023", "I001" ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]

@@ -106,26 +106,26 @@ sequenceDiagram
 - [x] Implementar `generar_ruido_rosa()` en `app/services/pink_noise.py`.
 - [x] Implementar `generar_sine_sweep()` en `app/services/sine_sweep.py`.
 - [ ] Implementar `reproducir_y_grabar()`.
-- [ ] Todos los tests de `test_generacion.py` deben pasar.
+- [x] Todos los tests de `test_generacion.py` deben pasar.
 
 ### M2 — Procesamiento de senales
 **Fecha:** Semana 12
 
-- [ ] Implementar `cargar_audio()` en `app/services/signal_utils.py`.
-- [ ] Implementar `obtener_ri_desde_sweep()` en `app/services/signal_utils.py`.
-- [ ] Implementar `filtro_octava()` en `app/services/filter.py`.
-- [ ] Implementar `a_escala_log()` en `app/services/signal_utils.py`.
-- [ ] Implementar `sintetizar_ri()` para validacion.
-- [ ] Todos los tests de `test_procesamiento.py` deben pasar.
+- [x] Implementar `cargar_audio()` en `app/services/signal_utils.py`.
+- [x] Implementar `obtener_ri_desde_sweep()` en `app/services/signal_utils.py`.
+- [x] Implementar `filtro_octava()` en `app/services/filter.py`.
+- [x] Implementar `a_escala_log()` en `app/services/signal_utils.py`.
+- [x] Implementar `sintetizar_ri()` para validacion.
+- [x] Todos los tests de `test_procesamiento.py` deben pasar.
 
 ### M3 — API REST y analisis de parametros acusticos
 **Fecha:** Semana 15
 
-- [ ] Implementar `integral_schroeder()` en `app/services/acoustic_parameters.py`.
-- [ ] Implementar `regresion_lineal()` en `app/services/acoustic_parameters.py`.
-- [ ] Implementar `calcular_parametros_acusticos()` en `app/services/acoustic_parameters.py`.
-- [ ] Crear routers y schemas para exponer toda la funcionalidad como API REST.
-- [ ] Todos los tests de `test_analisis.py` y `test_api.py` deben pasar.
+- [x] Implementar `integral_schroeder()` en `app/services/acoustic_parameters.py`.
+- [x] Implementar `regresion_lineal()` en `app/services/acoustic_parameters.py`.
+- [x] Implementar `calcular_parametros_acusticos()` en `app/services/acoustic_parameters.py`.
+- [x] Crear routers y schemas para exponer toda la funcionalidad como API REST.
+- [x] Todos los tests de `test_analisis.py` y `test_api.py` deben pasar.
 - [ ] (Opcional) Implementar `metodo_lundeby()`.
 
 
@@ -206,8 +206,3 @@ uv run ruff check --fix app/ tests/
 # Formatear el codigo
 uv run ruff format app/ tests/
 ```
-
-## Licencia
-
-Este proyecto esta licenciado bajo la Licencia MIT. Ver el archivo `LICENSE` para mas detalles.
-
