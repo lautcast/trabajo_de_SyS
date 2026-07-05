@@ -389,7 +389,7 @@ def metodo_lundeby(ri: np.ndarray, fs: int) -> tuple[int, float]:
     eps = np.finfo(float).eps
     
     #SE CALCULA LA ENERGÍA EN INTERVALOS (10 a 50 ms). Usamos 10 ms.
-    window_ms = 10
+    window_ms = 20
     ventana_muestras = int((window_ms / 1000) * fs)
     
     # Recortamos un poquito el final de la RI para que sea múltiplo exacto de la ventana
