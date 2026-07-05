@@ -368,139 +368,117 @@ def calcular_parametros_globales(ri: np.ndarray, fs: int) -> dict:
         "C80": c80
     }
 
-
-
-def metodo_lundeby(ri: np.ndarray, fs: int) -> int:
-    """
-    Estima el punto de truncamiento de la RI (metodo de Lundeby).
-
+def metodo_lundeby(ri: np.ndarray, fs: int) -> tuple[int, float]:
+    """Determina el punto de truncamiento de la RI con el nivel de ruido usando el metodo de Lundeby.
+    
     Parameters
     ----------
-    ri : np.ndarray --> Respuesta al impulso (array 1D).
-    
-    fs : int --> Frecuencia de muestreo en Hz.
-
+    ri : np.ndarray
+        Respuesta al impulso (array 1D).
+    fs : int
+        Frecuencia de muestreo en Hz.
+        
     Returns
     -------
-    int --> Indice de la muestra donde se estima el punto de truncamiento.
-
-    Notes
-    -----
-    El punto de truncamiento se usa para corregir la integral de Schroeder. Las muestras 
-    despues del punto de truncamiento se reemplazan por la extrapolacion de la recta de 
-    regresion antes de integrar.
-
-    References
-    ----------
-    [1] Lundeby, A. et al. (1995). "Uncertainties of measurements in room acoustics." Acta Acustica.
+    tuple[int, float]
+        (indice_truncamiento, nivel_ruido_dB)
+        Indice de la muestra donde la RI se cruza con el ruido de fondo
+        y el nivel estimado de ruido en dB.
     """
-
-    # Prevención: evitar ceros absolutos para el cálculo de logaritmos
+    # Prevención de log(0)
     eps = np.finfo(float).eps
-
-    # Primer Inciso --> Calcular la curva de decaimiento promediada en intervalos.
-
-    # 1. Definimos el tamaño de la ventana en muestras (ej. 10 ms)
+    
+    #SE CALCULA LA ENERGÍA EN INTERVALOS (10 a 50 ms). Usamos 10 ms.
     window_ms = 10
     ventana_muestras = int((window_ms / 1000) * fs)
-
-    # Esto devuelve la energía suavizada de tamaño completo
-
-    energia_suavizada_completa = suavizar_signal(ri, ventana=ventana_muestras)
-
-    # 3. Submuestreo (Diezmado) para obtener bloques discretos
-    # Tomamos un valor cada 'ventana_muestras' saltos
-
-    energia_bloques = energia_suavizada_completa[::ventana_muestras]
-
-    # 4. Pasamos a dB (igual que antes)
-
+    
+    # Recortamos un poquito el final de la RI para que sea múltiplo exacto de la ventana
+    n_ventanas = len(ri) // ventana_muestras
+    ri_truncada = ri[:n_ventanas * ventana_muestras]
+    
+    #Elevar al cuadrado (energía) y promediar por bloques de forma ultra rápida con NumPy
+    ri_cuadratica = ri_truncada ** 2
+    energia_bloques = np.mean(ri_cuadratica.reshape(n_ventanas, ventana_muestras), axis=1)
+    
+    #Pasamos a decibeles
     db_bloques = 10 * np.log10(energia_bloques + eps)
-
-    # Eje de tiempo en muestras para cada bloque
-
-    n_blocks = len(db_bloques)
-    tiempo_bloques = np.arange(n_blocks) * ventana_muestras + (ventana_muestras / 2)
-
-    # Encontramos el pico máximo para no incluir la subida inicial en la regresión
+    
+    #Eje de tiempo en muestras (ubicado en el centro de cada ventana)
+    tiempo_bloques = np.arange(n_ventanas) * ventana_muestras + (ventana_muestras // 2)
+    
+    #Encontramos el máximo para evitar la subida inicial del impulso
     peak_idx = np.argmax(db_bloques)
-
-    # Segundo Inciso --> Estimar el nivel de ruido de fondo (últimos 10%).
-
-    tail_start_idx = int(n_blocks * 0.9)
+    
+    #ESTIMACIÓN INICIAL DEL RUIDO (último 10%)
+    tail_start_idx = int(n_ventanas * 0.9)
     if tail_start_idx <= peak_idx:
-        tail_start_idx = n_blocks - 1 # Fallback de seguridad
-
+        tail_start_idx = n_ventanas - 1 # Fallback de seguridad
+        
     noise_level = np.mean(db_bloques[tail_start_idx:])
-
+    
     # Parámetros de iteración
     max_iter = 10
     tolerance_db = 0.1
-    slope = 0
-    intercept = 0
-
-    # Quinto Inciso --> Iterar: recalcular el nivel de ruido, el punto de cruce y la regresion hasta convergencia.
-
+    slope = 0.0
+    intercept = 0.0
+    
+    #BUCLE ITERATIVO para refinar la estimación del nivel de ruido y el punto de truncamiento
     for iteracion in range(max_iter):
-
-        # Tercer Inciso --> Punto de cruce preliminar (ruido + 10 dB).
+        # Punto de cruce preliminar (ruido + 10 dB)
         threshold = noise_level + 10
-
-        # Buscar el primer bloque que cruza el umbral después del pico
+        
         cross_idx = peak_idx
-        for j in range(peak_idx, n_blocks):
+        for j in range(peak_idx, n_ventanas):
             if db_bloques[j] < threshold:
                 cross_idx = j
                 break
-
-        # Si no hay suficiente caída, abortamos la iteración
+                
+        # Si no hay suficiente caída, abortamos
         if cross_idx == peak_idx or cross_idx - peak_idx < 3:
             break
-
-        # Cuarto Inciso --> Realizar regresión lineal desde el pico hasta el punto de cruce preliminar
+            
+        #Regresión Lineal desde el pico hasta el punto de cruce
         x_reg = tiempo_bloques[peak_idx:cross_idx]
         y_reg = db_bloques[peak_idx:cross_idx]
-
-        # Ajuste polinómico de grado 1 (recta: y = mx + b)
+        
         slope, intercept = np.polyfit(x_reg, y_reg, 1)
-
-        # Si la pendiente es positiva, algo falló (no es un decaimiento)
+        
+        #Si la pendiente sube en vez de bajar, algo está mal, abortamos
         if slope >= 0:
             break
-
-        # Encontrar dónde la nueva recta cruza el ruido actual (en muestras)
+            
+        #Encontrar nueva muestra de cruce exacto
         cross_x_samples = (noise_level - intercept) / slope
-
-        # Recalcular el nivel de ruido usando un margen de seguridad después del cruce
-        # (ej. 10% de la longitud restante o un valor fijo, aquí usamos el 10% del total como margen)
+        
+        #Recalcular ruido dejando un margen de seguridad (10% de la RI) después del cruce
         margin_samples = int(0.1 * len(ri))
         new_tail_start_samples = int(cross_x_samples + margin_samples)
         new_tail_start_block = new_tail_start_samples // ventana_muestras
-
-        # Asegurar que no nos pasamos de los límites del arreglo
-        if new_tail_start_block >= n_blocks:
-            new_tail_start_block = int(n_blocks * 0.9)
-
+        
+        #Limitar índices para no caernos del arreglo
+        if new_tail_start_block >= n_ventanas:
+            new_tail_start_block = int(n_ventanas * 0.9)
+        elif new_tail_start_block <= cross_idx:
+            new_tail_start_block = cross_idx + 1
+            
         new_noise_level = np.mean(db_bloques[new_tail_start_block:])
-
-        # Verificar convergencia
-        if abs(new_noise_level - noise_level) < tolerance_db:
+        
+        #CHEQUEO DE CONVERGENCIA, el nivel de ruido se estabiliza si la diferencia es menor a la tolerancia.
+        if abs(noise_level - new_noise_level) < tolerance_db:
             noise_level = new_noise_level
             break
-
+            
+        #Actualizamos para la próxima vuelta
         noise_level = new_noise_level
 
-    # Sexto Inciso --> El punto de truncamiento final.
-
+    #CÁLCULO DEL TRUNCAMIENTO FINAL
     if slope < 0:
         trunc_sample = int((noise_level - intercept) / slope)
     else:
-        # Fallback si no hubo un decaimiento claro (señal con bajísimo SNR)
+        # Fallback si no hubo un decaimiento claro
         trunc_sample = len(ri)
-
-    # Clamping: Asegurarnos de que el índice devuelto sea válido para el array original
+        
+    # Asegurarnos de que el índice esté dentro del largo original del archivo
     trunc_sample = max(0, min(trunc_sample, len(ri) - 1))
-
-    return trunc_sample, float(noise_level)
-
-
+    
+    return int(trunc_sample), float(noise_level)
