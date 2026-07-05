@@ -175,7 +175,7 @@ class TestGenerarSineSweep:
 
         # Verificamos con Asserts que la frecuencia del final sea estrictamente mayor que la del inicio.
 
-        assert frec_fin > frec_inicio, f"Fallo: La frecuencia no aumenta con el tiempo"
+        assert frec_fin > frec_inicio, "Fallo: La frecuencia no aumenta con el tiempo"
 
         # Comprobamos que arranca en bajas frecuencias y termina en altas.
         
