@@ -1,11 +1,19 @@
 "Milestone 2 a 3: Endpoints de Filtrado"
 
 import numpy as np
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
+import io
+import os
+import tempfile
+from pathlib import Path
+
+import soundfile as sf
+from fastapi.responses import StreamingResponse
+from scipy.io import wavfile
 
 from app.services.filter import filtro_octava
-
+from app.services.signal_utils import cargar_audio
 
 router = APIRouter()
 
@@ -74,4 +82,51 @@ def filtrar_audio_por_banda(request: FilterBandRequest):
         raise HTTPException(status_code=500, detail=f"Error interno en el filtrado: {str(e)}") from e
 
 
-"""-----------------------------------------------------------------------------------------------------"""
+@router.post("/filter/listen", summary="Filtrar Audio y Escuchar (Banda de Octava)")
+async def filter_and_listen_audio(
+    file: UploadFile = File(...),
+    fc: float = Form(..., description="Frecuencia central de la banda de octava (ej: 1000, 500, 250)")
+):
+    """
+    Sube un archivo de audio, lo filtra en la banda de octava especificada
+    y devuelve un archivo .wav listo para ser escuchado o descargado.
+    """
+    if not file.filename:
+        raise HTTPException(status_code=422, detail="Archivo inválido.")
+
+    extension = Path(file.filename).suffix.lower()
+    if extension not in ['.wav', '.flac']:
+        raise HTTPException(status_code=422, detail="Solo se permiten .wav o .flac")
+
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=extension) as temp_audio:
+            temp_audio.write(await file.read())
+            ruta_temporal = temp_audio.name
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error guardando el archivo: {e}") from e
+
+    try:
+        senal_numpy, fs = cargar_audio(ruta=ruta_temporal)
+        
+        if senal_numpy.ndim > 1:
+            senal_numpy = np.mean(senal_numpy, axis=1)
+
+        audio_filtrado = filtro_octava(senal_numpy, fc=fc, fs=fs, orden=4)
+
+        buffer = io.BytesIO()
+        sf.write(buffer, audio_filtrado, fs, format='WAV', subtype='PCM_16')
+        buffer.seek(0)
+
+        nombre_salida = f"audio_filtrado_{int(fc)}Hz.wav"
+        
+        return StreamingResponse(
+            buffer, 
+            media_type="audio/wav", 
+            headers={"Content-Disposition": f'attachment; filename="{nombre_salida}"'}
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fallo en el filtrado: {str(e)}") from e
+    finally:
+        if os.path.exists(ruta_temporal):
+            os.remove(ruta_temporal)
