@@ -17,10 +17,6 @@ router = APIRouter()
 # 1. MODELOS DE RESPUESTA PYDANTIC
 # ==========================================
 
-class LundebyResult(BaseModel):
-    muestra_truncamiento: int = Field(..., description="Índice de la muestra de truncamiento")
-    tiempo_segundos: float = Field(..., description="Tiempo exacto de truncamiento en segundos")
-    nivel_ruido_db: float = Field(..., description="Nivel de ruido de fondo estimado en dB")
 
 class AcousticsBroadbandResponse(BaseModel):
     EDT: float | None = Field(None, description="Early Decay Time global (segundos)")
@@ -29,7 +25,8 @@ class AcousticsBroadbandResponse(BaseModel):
     T30: float | None = Field(None, description="T30 global (segundos)")
     D50: float | None = Field(None, description="Definición global (%)")
     C80: float | None = Field(None, description="Claridad global (dB)")
-    Lundeby: LundebyResult | None = Field(None, description="Resultados del análisis de Lundeby global")
+    Lundeby_Cruce: int | None = Field(None, description="Muestra exacta de truncamiento global")
+    Ruido_Fondo_dB: float | None = Field(None, description="Nivel de ruido de fondo estimado global en dB")
 
 class AcousticsByBandsResponse(BaseModel):
     EDT: dict[str, float | None]
@@ -38,7 +35,9 @@ class AcousticsByBandsResponse(BaseModel):
     T30: dict[str, float | None]
     D50: dict[str, float | None]
     C80: dict[str, float | None]
-    Lundeby: dict[str, LundebyResult] = Field(default_factory=dict, description="Resultados de Lundeby por banda de frecuencia")
+    Lundeby_Cruce: dict[str, int | None] = Field(description="Muestra exacta de truncamiento por banda")
+    Ruido_Fondo_dB: dict[str, float | None] = Field(description="Nivel de ruido de fondo estimado por banda en dB")
+    
 
 # ==========================================
 # 2. FUNCIÓN AUXILIAR (Manejo de Archivos)

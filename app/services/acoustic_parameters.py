@@ -173,11 +173,18 @@ import numpy as np
 
 # (Tus importaciones previas de filtro_octava, metodo_lundeby, etc.)
 
+import numpy as np
+
 def calcular_parametros_acusticos(ri: np.ndarray, fs: int, usar_lundeby: bool = True) -> dict:
     """Calcula los parametros acusticos de una sala a partir de su RI."""
 
     frecuencias_centrales = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
-    resultados = {'EDT': {}, 'T10': {}, 'T20': {}, 'T30': {}, 'D50': {}, 'C80': {}}
+    
+    # Agregamos las nuevas claves al diccionario inicial
+    resultados = {
+        'EDT': {}, 'T10': {}, 'T20': {}, 'T30': {}, 'D50': {}, 'C80': {},
+        'Lundeby_Cruce': {}, 'Ruido_Fondo_dB': {}
+    }
 
     for f in frecuencias_centrales:
         ri_banda = filtro_octava(ri, fc=f, fs=fs, orden=4)
@@ -199,13 +206,20 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int, usar_lundeby: bool = 
             resultados['C80'][f] = None
 
         "-------------------------------------------------------------------------------------------------"
-        # CONTROL DE LUNDEBY
+        # CONTROL DE LUNDEBY Y GUARDADO DE DATOS
         if usar_lundeby:
-            indice_truncamiento, _ = metodo_lundeby(ri_banda, fs)
+            indice_truncamiento, nivel_ruido = metodo_lundeby(ri_banda, fs)
             ri_truncada = ri_banda[:indice_truncamiento]
+            
+            # Guardamos los datos para esta frecuencia
+            resultados['Lundeby_Cruce'][f] = indice_truncamiento
+            resultados['Ruido_Fondo_dB'][f] = nivel_ruido
         else:
-            # Si es False, usamos la señal completa sin truncar
             ri_truncada = ri_banda
+            
+            # Si no se usa, devolvemos nulos
+            resultados['Lundeby_Cruce'][f] = None
+            resultados['Ruido_Fondo_dB'][f] = None
         "-------------------------------------------------------------------------------------------------"
 
         envolvente_ri_banda = integral_schroeder(ri_truncada)
@@ -257,12 +271,14 @@ def calcular_parametros_globales(ri: np.ndarray, fs: int, usar_lundeby: bool = T
         c80 = None
 
     # ====================================================================
-    # CONTROL DE LUNDEBY
+    # CONTROL DE LUNDEBY Y GUARDADO DE DATOS
     if usar_lundeby:
-        indice_truncamiento, _ = metodo_lundeby(ri, fs)
+        indice_truncamiento, nivel_ruido = metodo_lundeby(ri, fs)
         ri_truncada = ri[:indice_truncamiento]
     else:
         ri_truncada = ri
+        indice_truncamiento = None
+        nivel_ruido = None
     # ====================================================================
 
     envolvente = integral_schroeder(ri_truncada)
@@ -297,7 +313,9 @@ def calcular_parametros_globales(ri: np.ndarray, fs: int, usar_lundeby: bool = T
         "T20": t20,
         "T30": t30,
         "D50": d50,
-        "C80": c80
+        "C80": c80,
+        "Lundeby_Cruce": indice_truncamiento,
+        "Ruido_Fondo_dB": nivel_ruido
     }
 
 def metodo_lundeby(ri: np.ndarray, fs: int) -> tuple[int, float]:
