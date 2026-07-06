@@ -15,6 +15,10 @@ from scipy.io import wavfile
 from app.services.filter import filtro_octava
 from app.services.signal_utils import cargar_audio
 
+router = APIRouter()
+
+"""-----------------------------------------------------------------------------------------------------"""
+
 class FilterBandRequest(BaseModel):
     # Field(...) permite agregar documentación que se verá en el Swagger UI
     signal_in: list[float] = Field(..., description="Arreglo de la señal de audio cruda")
@@ -26,9 +30,9 @@ class FilterBandRequest(BaseModel):
 class FilterBandResponse(BaseModel):
     signal_out: list[float] = Field(..., description="Arreglo de la señal de audio filtrada")
 
+"""-----------------------------------------------------------------------------------------------------"""
 
-router = APIRouter()
-
+# Router para la función lista_de_frecuencias_centrales.
 
 @router.get("/frequencies")
 def lista_de_frecuencias_centrales():
@@ -39,6 +43,10 @@ def lista_de_frecuencias_centrales():
     frec_cent_normalizadas = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
     return {"frecuencias_centrales_hz": frec_cent_normalizadas}
 
+
+"""-----------------------------------------------------------------------------------------------------"""
+
+# Router para la función filtro_octava.
 
 @router.post("/band", response_model=FilterBandResponse)
 def filtrar_audio_por_banda(request: FilterBandRequest):
@@ -73,6 +81,7 @@ def filtrar_audio_por_banda(request: FilterBandRequest):
 
         raise HTTPException(status_code=500, detail=f"Error interno en el filtrado: {str(e)}") from e
 
+<<<<<<< HEAD
 @router.post("/filter/listen", summary="Filtrar Audio y Escuchar (Banda de Octava)")
 async def filter_and_listen_audio(
     file: UploadFile = File(...),
@@ -121,3 +130,7 @@ async def filter_and_listen_audio(
     finally:
         if os.path.exists(ruta_temporal):
             os.remove(ruta_temporal)
+=======
+
+"""-----------------------------------------------------------------------------------------------------"""
+>>>>>>> main

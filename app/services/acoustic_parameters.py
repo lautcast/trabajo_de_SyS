@@ -51,10 +51,11 @@ def suavizar_signal(signal: np.ndarray, ventana: int|str = 'hilbert') -> np.ndar
         # Aplicamos la funcion signal.hilbert() de scipy para obtener la señal analítica
         # que es igual a la suma de la señal real con la transformada de Hilbert de la misma.
 
-        # Agregamos np.asarray() para que Pylance entienda correctamente el tipo de dato
+        # Agregamos np.asarray() para que Pylance entienda correctamente el tipo de dato.
+
         analitica = np.asarray(hilbert(signal))
 
-        # Para calcular la envolvente de la señal real, calculamos la magnitud de la señal analítica
+        # Para calcular la envolvente de la señal real, calculamos la magnitud de la señal analítica.
 
         envolvente = np.abs(analitica)
 
@@ -80,22 +81,30 @@ def integral_schroeder(ri: np.ndarray) -> np.ndarray:
     .. [1] Schroeder, M. R. (1965). "New method of measuring reverberation
        time." The Journal of the Acoustical Society of America.
     """
-
+    
     # Elevamos la señal al cuadrado para obtener la energía de cada muestra.
 
     energia = ri ** 2
+    
+    # Encontramos el pico máximo para ignorar el pre-ringing del filtro.
+    
+    pico_idx = np.argmax(energia)
+    
+    # Separamos solo la parte de la caída (desde el pico hasta el final).
 
-    # Damos vuelta el arreglo para calcular la integral discreta.
+    energia_caida = energia[pico_idx:]
+    
+    # Schroeder iterando al revés SOLO en la parte de la caída.
 
-    energia_inversa = energia[::-1]
+    edc_caida = np.cumsum(energia_caida[::-1])[::-1]
+    
+    # Rellenamos para no cambiar el tamaño del array original (así no se rompen tus tests ni las regresiones).
 
-    # Llevamos a cabo la integral discreta con la función np.cumsum().
-    # El parámetro [::-1] al final lo vuelve a poner en el orden cronológico correcto.
-
-    edc = np.cumsum(energia_inversa)[::-1]
-
-    # Pasamos a la EDC a escala logarítmica, utilizando un valor muy cercano a cero al que llamnamos épsilon
-    # para evitar la división por cero.
+    edc = np.zeros_like(energia)
+    edc[:pico_idx] = edc_caida[0]  # Mantenemos plano antes del pico
+    edc[pico_idx:] = edc_caida
+    
+    # Pasamos a la EDC a escala logarítmica.
 
     epsilon = np.finfo(float).eps
 
@@ -119,7 +128,8 @@ def regresion_lineal(x: np.ndarray, y: np.ndarray) -> tuple[float, float, float]
         (pendiente, ordenada_al_origen, r_cuadrado)
         pendiente en dB/s, ordenada en dB, coeficiente de determinacion.
     """
-    # Primero calculamos la cantidad total de muestras y la guardamos en N.
+    
+    # Primero calculamos la cantidad total de muestras y la guardamos en n.
 
     n = len(x)
 
@@ -252,16 +262,36 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int, usar_lundeby: bool = 
     return resultados
 
 
+<<<<<<< HEAD
 def calcular_parametros_globales(ri: np.ndarray, fs: int, usar_lundeby: bool = True) -> dict:
     """Calcula los parámetros acústicos para la señal completa sin aplicar filtrado."""
+=======
+def calcular_parametros_globales(ri: np.ndarray, fs: int) -> dict:
+    """
+    Calcula los parámetros acústicos para la señal completa sin aplicar filtrado.
+    Retorna un diccionario con las métricas calculadas.
+    """
+    
+    # Cálculos de Energía
+>>>>>>> main
     
     ri_cuadrado = ri ** 2
     energia_total = np.sum(ri_cuadrado)
 
+<<<<<<< HEAD
+=======
+    # D50 Global
+
+>>>>>>> main
     n50 = int(0.050 * fs)
     energia_50 = np.sum(ri_cuadrado[:n50])
     d50 = float((energia_50 / energia_total) * 100) if energia_total > 0 else 0.0
 
+<<<<<<< HEAD
+=======
+    # C80 Global
+
+>>>>>>> main
     n80 = int(0.080 * fs)
     energia_80 = np.sum(ri_cuadrado[:n80])
     energia_tardia_80 = np.sum(ri_cuadrado[n80:])
@@ -270,6 +300,7 @@ def calcular_parametros_globales(ri: np.ndarray, fs: int, usar_lundeby: bool = T
     else:
         c80 = None
 
+<<<<<<< HEAD
     # ====================================================================
     # CONTROL DE LUNDEBY Y GUARDADO DE DATOS
     if usar_lundeby:
@@ -283,6 +314,12 @@ def calcular_parametros_globales(ri: np.ndarray, fs: int, usar_lundeby: bool = T
 
     envolvente = integral_schroeder(ri_truncada)
     t = np.arange(len(ri_truncada)) / fs
+=======
+    # Tiempos de Reverberación Globales.
+
+    envolvente = integral_schroeder(ri)
+    t = np.arange(len(ri)) / fs
+>>>>>>> main
 
     def buscar_indice(array, value) -> int:
         return int((np.abs(array - value)).argmin())
@@ -307,6 +344,7 @@ def calcular_parametros_globales(ri: np.ndarray, fs: int, usar_lundeby: bool = T
     t20 = calcular_tx(indice_5, indice_25)
     t30 = calcular_tx(indice_5, indice_35)
 
+<<<<<<< HEAD
     return {
         "EDT": edt,
         "T10": t10,
@@ -317,6 +355,13 @@ def calcular_parametros_globales(ri: np.ndarray, fs: int, usar_lundeby: bool = T
         "Lundeby_Cruce": indice_truncamiento,
         "Ruido_Fondo_dB": nivel_ruido
     }
+=======
+    # Retornamos un diccionario con las claves idénticas al modelo Pydantic.
+
+    return {"EDT": edt, "T10": t10, "T20": t20, "T30": t30, "D50": d50, "C80": c80}
+
+
+>>>>>>> main
 
 def metodo_lundeby(ri: np.ndarray, fs: int) -> tuple[int, float]:
     """Determina el punto de truncamiento de la RI con el nivel de ruido usando el metodo de Lundeby.
@@ -335,46 +380,61 @@ def metodo_lundeby(ri: np.ndarray, fs: int) -> tuple[int, float]:
         Indice de la muestra donde la RI se cruza con el ruido de fondo
         y el nivel estimado de ruido en dB.
     """
-    # Prevención de log(0)
+    
+    # Prevenimos el logaritmo de cero.
+    
     eps = np.finfo(float).eps
     
-    #SE CALCULA LA ENERGÍA EN INTERVALOS (10 a 50 ms). Usamos 10 ms.
-    window_ms = 10
-    ventana_muestras = int((window_ms / 1000) * fs)
+    # Calculamos la energía en ventanas de 10 ms.
+
+    ventana_ms = 10
+    ventana_muestras = int((ventana_ms / 1000) * fs)
     
-    # Recortamos un poquito el final de la RI para que sea múltiplo exacto de la ventana
+    # Recortamos un poquito el final de la RI para que sea múltiplo exacto de la ventana.
+
     n_ventanas = len(ri) // ventana_muestras
     ri_truncada = ri[:n_ventanas * ventana_muestras]
     
-    #Elevar al cuadrado (energía) y promediar por bloques de forma ultra rápida con NumPy
+    # Elevamos al cuadrado para trabajar con energía y promediar por bloques de forma 
+    # ultra rápida con NumPy.
+
     ri_cuadratica = ri_truncada ** 2
     energia_bloques = np.mean(ri_cuadratica.reshape(n_ventanas, ventana_muestras), axis=1)
     
-    #Pasamos a decibeles
+    # Pasamos a decibeles
+    
     db_bloques = 10 * np.log10(energia_bloques + eps)
     
-    #Eje de tiempo en muestras (ubicado en el centro de cada ventana)
+    # Eje de tiempo en muestras (ubicado en el centro de cada ventana).
+    
     tiempo_bloques = np.arange(n_ventanas) * ventana_muestras + (ventana_muestras // 2)
     
-    #Encontramos el máximo para evitar la subida inicial del impulso
+    # Encontramos el máximo para evitar la subida inicial del impulso.
+
     peak_idx = np.argmax(db_bloques)
     
-    #ESTIMACIÓN INICIAL DEL RUIDO (último 10%)
+    # Estimación inicial del ruido (último 10%).
+    
     tail_start_idx = int(n_ventanas * 0.9)
     if tail_start_idx <= peak_idx:
         tail_start_idx = n_ventanas - 1 # Fallback de seguridad
         
     noise_level = np.mean(db_bloques[tail_start_idx:])
     
-    # Parámetros de iteración
+    # Parámetros de iteración.
+
     max_iter = 10
     tolerance_db = 0.1
     slope = 0.0
     intercept = 0.0
     
-    #BUCLE ITERATIVO para refinar la estimación del nivel de ruido y el punto de truncamiento
+    # Hacemos un bucle iterativo para refinar la estimación del nivel de 
+    # ruido y el punto de truncamiento.
+
     for _ in range(max_iter):
+
         # Punto de cruce preliminar (ruido + 10 dB)
+        
         threshold = noise_level + 10
         
         cross_idx = peak_idx
@@ -383,29 +443,34 @@ def metodo_lundeby(ri: np.ndarray, fs: int) -> tuple[int, float]:
                 cross_idx = j
                 break
                 
-        # Si no hay suficiente caída, abortamos
+        # Si no hay suficiente caída, abortamos.
         if cross_idx == peak_idx or cross_idx - peak_idx < 3:
             break
             
-        #Regresión Lineal desde el pico hasta el punto de cruce
+        # Regresión Lineal desde el pico hasta el punto de cruce.
+
         x_reg = tiempo_bloques[peak_idx:cross_idx]
         y_reg = db_bloques[peak_idx:cross_idx]
         
         slope, intercept = np.polyfit(x_reg, y_reg, 1)
         
-        #Si la pendiente sube en vez de bajar, algo está mal, abortamos
+        # Si la pendiente sube en vez de bajar, algo está mal, abortamos.
+        
         if slope >= 0:
             break
             
-        #Encontrar nueva muestra de cruce exacto
+        # Encontrar nueva muestra de cruce exacto.
+
         cross_x_samples = (noise_level - intercept) / slope
         
-        #Recalcular ruido dejando un margen de seguridad (10% de la RI) después del cruce
+        # Recalcular ruido dejando un margen de seguridad (10% de la RI) después del cruce.
+
         margin_samples = int(0.1 * len(ri))
         new_tail_start_samples = int(cross_x_samples + margin_samples)
         new_tail_start_block = new_tail_start_samples // ventana_muestras
         
-        #Limitar índices para no caernos del arreglo
+        # Limitar índices para no caernos del arreglo.
+
         if new_tail_start_block >= n_ventanas:
             new_tail_start_block = int(n_ventanas * 0.9)
         elif new_tail_start_block <= cross_idx:
@@ -413,22 +478,27 @@ def metodo_lundeby(ri: np.ndarray, fs: int) -> tuple[int, float]:
             
         new_noise_level = np.mean(db_bloques[new_tail_start_block:])
         
-        #CHEQUEO DE CONVERGENCIA, el nivel de ruido se estabiliza si la diferencia es menor a la tolerancia.
+        # Hacemos un chequeo de convergencia, el nivel de ruido se estabiliza si la 
+        # diferencia es menor a la tolerancia.
+        
         if abs(noise_level - new_noise_level) < tolerance_db:
             noise_level = new_noise_level
             break
             
-        #Actualizamos para la próxima vuelta
+        # Actualizamos para la próxima vuelta.
+        
         noise_level = new_noise_level
 
-    #CÁLCULO DEL TRUNCAMIENTO FINAL
+    # Cálculo del truncamiento final.
+
     if slope < 0:
         trunc_sample = int((noise_level - intercept) / slope)
     else:
-        # Fallback si no hubo un decaimiento claro
+        # Fallback si no hubo un decaimiento claro.
         trunc_sample = len(ri)
         
-    # Asegurarnos de que el índice esté dentro del largo original del archivo
+    # Nos aseguramos de que el índice esté dentro del largo original del archivo.
+
     trunc_sample = max(0, min(trunc_sample, len(ri) - 1))
     
     return int(trunc_sample), float(noise_level)

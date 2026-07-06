@@ -8,7 +8,6 @@ from scipy import signal
 
 
 def filtro_octava(signal_in: np.ndarray, fc: float, fs: int, orden: int = 4) -> np.ndarray:
-
     """
     Acciones
     --------
@@ -43,11 +42,11 @@ def filtro_octava(signal_in: np.ndarray, fc: float, fs: int, orden: int = 4) -> 
     f_inf = fc/(np.sqrt(2))
     f_sup = fc*(np.sqrt(2))
 
-    # Calculamos la frecuencia de Nyquist
+    # Calculamos la frecuencia de Nyquist.
 
     f_nyquist = fs/2
 
-    # Ahora dividimos las frecuencias de corte con la frecuencia de Nyquist
+    # Ahora dividimos las frecuencias de corte con la frecuencia de Nyquist.
 
     w_inf = f_inf/f_nyquist
     w_sup = f_sup/f_nyquist

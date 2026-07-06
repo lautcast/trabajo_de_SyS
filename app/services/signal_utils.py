@@ -37,7 +37,7 @@ def cargar_audio(ruta: str) -> tuple[np.ndarray, int]:
         Si el formato del archivo no es soportado (no es .wav ni .flac).
     """
 
-    # Convertimos la ruta o direccion del archivo a un objeto Path para manejarlo de forma segura
+    # Convertimos la ruta o direccion del archivo a un objeto Path para manejarlo de forma segura.
 
     ruta_obj = Path(ruta)
 
@@ -161,7 +161,8 @@ def obtener_ri_desde_sweep(grabacion: np.ndarray, filtro_inverso: np.ndarray) ->
     np.ndarray -- > Respuesta al impulso estimada, normalizada.
     """
 
-    # Realizamos la convolución entre el filtro inverso del sine sweep y la grabacion del sine sweep en el recinto.
+    # Realizamos la convolución entre el filtro inverso del sine sweep y la grabacion del 
+    # sine sweep en el recinto.
 
     ri = signal.fftconvolve(grabacion, filtro_inverso, mode='full')
 
