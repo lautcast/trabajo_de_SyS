@@ -195,7 +195,7 @@ class TestParametrosAcusticos:
 
 class TestMeteodoLundeby:
 
-    def test_lundeby_caso_ideal():
+    def test_lundeby_caso_ideal(self):
        """Simula una Respuesta al Impulso real: un decaimiento exponencial (reverberación) que se hunde en un piso de ruido estacionario."""
 
     fs = 44100
