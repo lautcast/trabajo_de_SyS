@@ -67,15 +67,15 @@ def suavizar_signal(signal: np.ndarray, ventana: int|str = 'hilbert') -> np.ndar
 
 def integral_schroeder(ri: np.ndarray) -> np.ndarray:
     """Calcula la integral de Schroeder (Energy Decay Curve).
-    
+
     Parameters
     ----------
     ri : np.ndarray --> Respuesta al impulso (array 1D).
-    
+
     Returns
     -------
     np.ndarray --> Curva de decaimiento energetico (EDC), normalizada.
-    
+
     References
     ----------
     .. [1] Schroeder, M. R. (1965). "New method of measuring reverberation
@@ -107,8 +107,9 @@ def integral_schroeder(ri: np.ndarray) -> np.ndarray:
     # Pasamos a la EDC a escala logarítmica.
 
     epsilon = np.finfo(float).eps
+
     edc_db = 10 * np.log10(edc / edc[0] + epsilon)
-    
+
     return edc_db
 
 
