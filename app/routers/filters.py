@@ -81,7 +81,7 @@ def filtrar_audio_por_banda(request: FilterBandRequest):
 
         raise HTTPException(status_code=500, detail=f"Error interno en el filtrado: {str(e)}") from e
 
-<<<<<<< HEAD
+
 @router.post("/filter/listen", summary="Filtrar Audio y Escuchar (Banda de Octava)")
 async def filter_and_listen_audio(
     file: UploadFile = File(...),
@@ -130,7 +130,3 @@ async def filter_and_listen_audio(
     finally:
         if os.path.exists(ruta_temporal):
             os.remove(ruta_temporal)
-=======
-
-"""-----------------------------------------------------------------------------------------------------"""
->>>>>>> main
