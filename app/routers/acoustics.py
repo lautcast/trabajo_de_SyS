@@ -6,13 +6,12 @@ from fastapi import APIRouter, HTTPException, UploadFile, File
 from pydantic import BaseModel, Field
 import os
 
-# Importamos las funciones principales desde servicios. 
-# Ya no necesitamos importar integral_schroeder ni regresion_lineal acá.
 from app.services.acoustic_parameters import calcular_parametros_acusticos, calcular_parametros_globales
 from app.routers.analysis import procesar_audio_subido
 
 router = APIRouter()
 
+"""-----------------------------------------------------------------------------------------------------"""
 
 class AcousticsRequest(BaseModel):
     ri: list[float] = Field(..., description="Arreglo de la Respuesta al Impulso (array 1D)")
@@ -34,6 +33,9 @@ class AcousticsBroadbandResponse(BaseModel):
     D50: float | None = Field(None, description="Definición global (%)")
     C80: float | None = Field(None, description="Claridad global (dB)")
 
+"""-----------------------------------------------------------------------------------------------------"""
+
+# Router para la función calcular_parametros_acusticos (POR BANDA).
 
 @router.post("/parameters/by-bands", response_model=AcousticsByBandsResponse, summary="Calcular Parámetros por Bandas (Sube WAV)")
 async def calcular_parametros_bandas_endpoint(file: UploadFile = File(...)):
@@ -44,15 +46,18 @@ async def calcular_parametros_bandas_endpoint(file: UploadFile = File(...)):
     senal_numpy, fs, ruta_temporal = await procesar_audio_subido(file)
 
     try:
-        # 1. Calculamos la matemática
+        # Calculamos la matemática.
+        
         resultados_acusticos = calcular_parametros_acusticos(ri=senal_numpy, fs=fs)
         
-        # 2. Convertimos las frecuencias (números) a texto (strings) para que el JSON no explote
+        # Convertimos las frecuencias (números) a texto (strings).
+        
         resultados_formateados = {}
         for parametro, valores in resultados_acusticos.items():
             resultados_formateados[parametro] = {str(frec): val for frec, val in valores.items()}
 
-        # 3. Devolvemos el diccionario ya formateado
+        # Devolvemos el diccionario ya formateado.
+       
         return resultados_formateados
         
     except Exception as e:
@@ -61,6 +66,10 @@ async def calcular_parametros_bandas_endpoint(file: UploadFile = File(...)):
         if os.path.exists(ruta_temporal):
             os.remove(ruta_temporal)
 
+
+"""-----------------------------------------------------------------------------------------------------"""
+
+# Router para la función calcular_parametros_globales.
 
 @router.post("/parameters", response_model=AcousticsBroadbandResponse, summary="Calcular Parámetros Globales (Broadband)")
 def calcular_parametros_global_endpoint(request: AcousticsRequest):
@@ -72,12 +81,15 @@ def calcular_parametros_global_endpoint(request: AcousticsRequest):
     fs = request.fs
 
     try:
-        # Llamamos al servicio, que nos devuelve un diccionario listo para usar
+        # A la función para calcular_parametros_globales.
+
         resultados_globales = calcular_parametros_globales(ri=ri, fs=fs)
         
-        # Desempaquetamos el diccionario (**) directamente en el modelo de Pydantic
+        # Desempaquetamos el diccionario (**) directamente en el modelo de Pydantic.
+        
         return AcousticsBroadbandResponse(**resultados_globales)
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error procesando parámetros globales: {str(e)}") from e
     
+"""-----------------------------------------------------------------------------------------------------"""

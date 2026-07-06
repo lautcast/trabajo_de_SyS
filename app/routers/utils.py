@@ -13,6 +13,8 @@ from app.services.signal_utils import a_escala_log, cargar_audio
 
 router = APIRouter()
 
+"""-----------------------------------------------------------------------------------------------------"""
+
 class LogScaleRequest(BaseModel):
     signal_in: list[float] = Field(
         ..., description="Arreglo de la señal de audio lineal (amplitud)"
@@ -132,23 +134,23 @@ def convertir_a_escala_logartimica(request: LogScaleRequest):
     de ruido de -120 dB.
     """
 
-    # 1. Transformar JSON web (List) a matemática pura (NumPy Array)
+    # Transformamos JSON web (List) a matemática pura (NumPy Array).
 
     senal_numpy = np.array(request.signal_in, dtype=np.float64)
 
     try:
 
-        # 2. Ejecutar tu función
+        # Ejecutamos la función.
 
         senal_db = a_escala_log(signal=senal_numpy)
 
-        # 3. Devolver el resultado transformado a lista estándar
+        # Devolvemos el resultado transformado a lista estándar.
 
         return LogScaleResponse(signal_out=senal_db.tolist())
 
     except Exception as e:
 
-        # Por si ocurre algún error matemático imprevisto
+        # Por si ocurre algún error matemático imprevisto.
 
         raise HTTPException(status_code=500, detail=f"Error en la conversión a dB: {str(e)}") from e
     
@@ -164,13 +166,13 @@ def procesar_suavizado(request: SmoothingRequest):
     o extrae la envolvente analítica utilizando la transformada de Hilbert.
     """
 
-    # 1. Transformamos JSON a NumPy
+    # Transformamos JSON a NumPy
 
     senal_numpy = np.array(request.signal_in, dtype=np.float64)
 
     try:
 
-        # 2. Ejecutamos tu función matemática
+        # Ejecutamos la función suavizar_signal.
 
         senal_suavizada = suavizar_signal(signal=senal_numpy, ventana=request.ventana)
 
@@ -180,7 +182,7 @@ def procesar_suavizado(request: SmoothingRequest):
 
     except ValueError as e:
 
-        # Este except agarra exactamente el ValueError que escribiste al final de tu función
+        # Este except agarra exactamente el ValueError que escribiste al final de tu función.
 
         raise HTTPException(status_code=400, detail=str(e)) from e
 
@@ -219,8 +221,6 @@ def procesar_schroeder(request: SchroederRequest):
 
     except Exception as e:
 
-
-        
         raise HTTPException(status_code=500, detail=f"Error al calcular la integral de Schroeder: {str(e)}") from e
 
 """-----------------------------------------------------------------------------------------------------"""
