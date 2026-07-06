@@ -7,9 +7,8 @@ from fastapi import APIRouter, File, HTTPException, UploadFile, Query
 from pydantic import BaseModel, Field
 
 # Importaciones de tus servicios
-from app.services.acoustic_parameters import calcular_parametros_acusticos, calcular_parametros_globales, metodo_lundeby
+from app.services.acoustic_parameters import calcular_parametros_acusticos, calcular_parametros_globales
 from app.services.signal_utils import cargar_audio
-from app.services.filter import filtro_octava
 
 router = APIRouter()
 

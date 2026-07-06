@@ -1,13 +1,9 @@
 """Milestone 1 a 3: Endpoints de Generación y Filtrado"""
 
 import io
-import os
-import tempfile
-from pathlib import Path
 
 import numpy as np
-import soundfile as sf
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from scipy.io import wavfile
@@ -16,8 +12,7 @@ from scipy.io import wavfile
 from app.services.pink_noise import generar_ruido_rosa
 from app.services.sine_sweep import generar_sine_sweep
 # Asegurate de importar cargar_audio y filtro_octava
-from app.services.signal_utils import sintetizar_ri, cargar_audio
-from app.services.acoustic_parameters import filtro_octava
+from app.services.signal_utils import sintetizar_ri
 
 router = APIRouter()
 

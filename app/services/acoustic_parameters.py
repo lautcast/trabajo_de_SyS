@@ -175,16 +175,6 @@ def regresion_lineal(x: np.ndarray, y: np.ndarray) -> tuple[float, float, float]
     return float(m), float(b), float(r_cuadrado)
 
 
-import numpy as np
-
-# Asegurate de importar metodo_lundeby, integral_schroeder, regresion_lineal y filtro_octava arriba en tu archivo
-
-import numpy as np
-
-# (Tus importaciones previas de filtro_octava, metodo_lundeby, etc.)
-
-import numpy as np
-
 def calcular_parametros_acusticos(ri: np.ndarray, fs: int, usar_lundeby: bool = True) -> dict:
     """Calcula los parametros acusticos de una sala a partir de su RI."""
 

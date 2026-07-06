@@ -1,19 +1,17 @@
 "Milestone 2 a 3: Endpoints de Filtrado"
 
 import numpy as np
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
-from pydantic import BaseModel, Field
 import io
 import os
 import tempfile
-from pathlib import Path
-
 import soundfile as sf
+from pathlib import Path
 from fastapi.responses import StreamingResponse
-from scipy.io import wavfile
-
 from app.services.filter import filtro_octava
 from app.services.signal_utils import cargar_audio
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from pydantic import BaseModel, Field
+
 
 router = APIRouter()
 
