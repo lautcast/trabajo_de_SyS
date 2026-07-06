@@ -3,7 +3,7 @@ import tempfile
 from pathlib import Path
 import numpy as np
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, HTTPException, UploadFile, Query
 from pydantic import BaseModel, Field
 
 # Importaciones de tus servicios
@@ -81,78 +81,51 @@ async def procesar_audio_subido(file: UploadFile) -> tuple[np.ndarray, int, str]
 
 frecuencias_octava = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
 
-@router.post("/parameters/global", response_model=AcousticsBroadbandResponse, summary="Calcular Parámetros y Lundeby Global")
-async def calcular_parametros_global_endpoint(file: UploadFile = File(...)):
+@router.post("/parameters/by-bands", response_model=AcousticsByBandsResponse, summary="Calcular Parámetros por Bandas (Sube WAV)")
+async def calcular_parametros_bandas_endpoint(
+    file: UploadFile = File(...),
+    usar_lundeby: bool = Query(True, description="Activa el truncamiento de ruido con método de Lundeby")
+):
     """
     Sube un archivo de audio (.wav o .flac).
-    Calcula los parámetros y el punto de truncamiento (Lundeby) para la señal completa.
+    La API lo filtra en bandas de octava y devuelve los parámetros por frecuencia.
+    Permite activar o desactivar el método de Lundeby.
     """
     senal_numpy, fs, ruta_temporal = await procesar_audio_subido(file)
 
     try:
-        # 1. Análisis de parámetros globales
-        resultados_globales = calcular_parametros_globales(ri=senal_numpy, fs=fs)
-        
-        # 2. Análisis de Lundeby global
-        trunc_sample, noise_level = metodo_lundeby(senal_numpy, fs)
-        lundeby_data = LundebyResult(
-            muestra_truncamiento=trunc_sample,
-            tiempo_segundos=round(trunc_sample / fs, 4),
-            nivel_ruido_db=round(noise_level, 2)
-        )
-        
-        # Combinamos y enviamos según el modelo
-        return AcousticsBroadbandResponse(**resultados_globales, Lundeby=lundeby_data)
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error procesando parámetros globales: {str(e)}") from e
-    finally:
-        if os.path.exists(ruta_temporal):
-            os.remove(ruta_temporal)
-
-
-@router.post("/parameters/by-bands", response_model=AcousticsByBandsResponse, summary="Calcular Parámetros y Lundeby por Bandas")
-async def calcular_parametros_bandas_endpoint(file: UploadFile = File(...)):
-    """
-    Sube un archivo de audio (.wav o .flac).
-    La API lo filtra en bandas de octava y devuelve los parámetros y resultados de Lundeby por frecuencia.
-    """
-    senal_numpy, fs, ruta_temporal = await procesar_audio_subido(file)
-
-    try:
-        # 1. Análisis de parámetros acústicos por bandas
-        resultados_acusticos = calcular_parametros_acusticos(ri=senal_numpy, fs=fs)
+        # Le pasamos el booleano a la función matemática
+        resultados_acusticos = calcular_parametros_acusticos(ri=senal_numpy, fs=fs, usar_lundeby=usar_lundeby)
         
         resultados_formateados = {}
         for parametro, valores in resultados_acusticos.items():
             resultados_formateados[parametro] = {str(frec): val for frec, val in valores.items()}
 
-        # 2. Análisis de Lundeby iterando por el banco de filtros
-        f_nyquist = fs / 2
-        lundeby_por_banda = {}
-        
-        for fc in frecuencias_octava:
-            if (fc / np.sqrt(2)) >= f_nyquist:
-                continue
-                
-            ri_filtrada = filtro_octava(senal_numpy, fc, fs)
-            trunc_sample, noise_level = metodo_lundeby(ri_filtrada, fs)
-            
-            # Se usa el str(fc) como clave para que coincida con las claves de los otros parámetros en el JSON
-            clave_banda = str(fc) if fc % 1 != 0 else str(int(fc))
-            
-            lundeby_por_banda[clave_banda] = LundebyResult(
-                muestra_truncamiento=trunc_sample,
-                tiempo_segundos=round(trunc_sample / fs, 4),
-                nivel_ruido_db=round(noise_level, 2)
-            )
-            
-        resultados_formateados["Lundeby"] = lundeby_por_banda
-
         return resultados_formateados
-        
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error procesando parámetros acústicos por bandas: {str(e)}") from e
+        raise HTTPException(status_code=500, detail=f"Error procesando parámetros acústicos: {str(e)}") from e
+    finally:
+        if os.path.exists(ruta_temporal):
+            os.remove(ruta_temporal)
+
+
+@router.post("/parameters/global", response_model=AcousticsBroadbandResponse, summary="Calcular Parámetros Globales (Sube WAV)")
+async def calcular_parametros_global_endpoint(
+    file: UploadFile = File(...),
+    usar_lundeby: bool = Query(True, description="Activa el truncamiento de ruido con método de Lundeby")
+):
+    """
+    Sube un archivo de audio (.wav o .flac).
+    La API calcula los parámetros para la señal completa.
+    """
+    senal_numpy, fs, ruta_temporal = await procesar_audio_subido(file)
+
+    try:
+        # Le pasamos el booleano a la función global
+        resultados_globales = calcular_parametros_globales(ri=senal_numpy, fs=fs, usar_lundeby=usar_lundeby)
+        return AcousticsBroadbandResponse(**resultados_globales)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error procesando parámetros globales: {str(e)}") from e
     finally:
         if os.path.exists(ruta_temporal):
             os.remove(ruta_temporal)

@@ -169,39 +169,26 @@ import numpy as np
 
 # Asegurate de importar metodo_lundeby, integral_schroeder, regresion_lineal y filtro_octava arriba en tu archivo
 
-def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
-    """Calcula los parametros acusticos de una sala a partir de su RI.
+import numpy as np
 
-    Parameters
-    ----------
-    ri : np.ndarray --> Respuesta al impulso (array 1D).
-    fs : int --> Frecuencia de muestreo en Hz.
+# (Tus importaciones previas de filtro_octava, metodo_lundeby, etc.)
 
-    Returns
-    -------
-    dict --> Diccionario con los parametros acusticos por banda.
-    """
+def calcular_parametros_acusticos(ri: np.ndarray, fs: int, usar_lundeby: bool = True) -> dict:
+    """Calcula los parametros acusticos de una sala a partir de su RI."""
 
     frecuencias_centrales = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
     resultados = {'EDT': {}, 'T10': {}, 'T20': {}, 'T30': {}, 'D50': {}, 'C80': {}}
 
     for f in frecuencias_centrales:
-
-        # Filtramos la RI en la banda de la frecuencia central correspondiente.
         ri_banda = filtro_octava(ri, fc=f, fs=fs, orden=4)
 
-        # Calculamos la energía total
         ri_banda_cuadrado = ri_banda ** 2
         energia_total = np.sum(ri_banda_cuadrado)
 
-        "-------------------------------------------------------------------------------------------------"
-        # D50 (Definición)
         n50 = int(0.050 * fs)
         energia_50 = np.sum(ri_banda_cuadrado[:n50])
         resultados['D50'][f] = (energia_50 / energia_total) * 100 if energia_total > 0 else 0.0
 
-        "-------------------------------------------------------------------------------------------------"
-        # C80 (Claridad)
         n80 = int(0.080 * fs)
         energia_80 = np.sum(ri_banda_cuadrado[:n80])
         energia_tardia_80 = np.sum(ri_banda_cuadrado[n80:])
@@ -212,23 +199,18 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
             resultados['C80'][f] = None
 
         "-------------------------------------------------------------------------------------------------"
-        # APLICACIÓN DEL MÉTODO DE LUNDEBY (Por banda)
-        # Evaluamos el ruido de fondo específicamente para esta frecuencia
-        indice_truncamiento, _ = metodo_lundeby(ri_banda, fs)
-        
-        # Truncamos la señal (descartamos el ruido de fondo)
-        ri_truncada = ri_banda[:indice_truncamiento]
-
+        # CONTROL DE LUNDEBY
+        if usar_lundeby:
+            indice_truncamiento, _ = metodo_lundeby(ri_banda, fs)
+            ri_truncada = ri_banda[:indice_truncamiento]
+        else:
+            # Si es False, usamos la señal completa sin truncar
+            ri_truncada = ri_banda
         "-------------------------------------------------------------------------------------------------"
-        # Ahora, calculamos el EDT y los Tiempos de Reverberación con la señal TRUNCADA
 
-        # Obtenemos la envolvente usando Schroeder solo sobre la parte útil de la señal
         envolvente_ri_banda = integral_schroeder(ri_truncada)
-
-        # El vector de tiempo ahora debe tener el largo de la señal recortada
         t = np.arange(len(ri_truncada)) / fs
 
-        "------------------------------"
         def buscar_indice(array, value) -> int:
             return (np.abs(array - value)).argmin()
 
@@ -242,10 +224,8 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
         def calcular_tx(indice_inicio, indice_final):
             if indice_final <= indice_inicio or (indice_final - indice_inicio) < 2:
                 return None 
-
             tramo_temporal = t[indice_inicio:indice_final]
             db = envolvente_ri_banda[indice_inicio:indice_final]
-
             m, b, r_2 = regresion_lineal(tramo_temporal, db)
             extrapolacion = (-60.0) / m if m != 0 else None
             return extrapolacion
@@ -258,21 +238,16 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int) -> dict:
     return resultados
 
 
-def calcular_parametros_globales(ri: np.ndarray, fs: int) -> dict:
-    """
-    Calcula los parámetros acústicos para la señal completa sin aplicar filtrado.
-    Retorna un diccionario con las métricas calculadas.
-    """
-    # 1. Cálculos de Energía
+def calcular_parametros_globales(ri: np.ndarray, fs: int, usar_lundeby: bool = True) -> dict:
+    """Calcula los parámetros acústicos para la señal completa sin aplicar filtrado."""
+    
     ri_cuadrado = ri ** 2
     energia_total = np.sum(ri_cuadrado)
 
-    # D50 Global
     n50 = int(0.050 * fs)
     energia_50 = np.sum(ri_cuadrado[:n50])
     d50 = float((energia_50 / energia_total) * 100) if energia_total > 0 else 0.0
 
-    # C80 Global
     n80 = int(0.080 * fs)
     energia_80 = np.sum(ri_cuadrado[:n80])
     energia_tardia_80 = np.sum(ri_cuadrado[n80:])
@@ -282,12 +257,14 @@ def calcular_parametros_globales(ri: np.ndarray, fs: int) -> dict:
         c80 = None
 
     # ====================================================================
-    # APLICACIÓN DEL MÉTODO DE LUNDEBY (Global)
-    indice_truncamiento, _ = metodo_lundeby(ri, fs)
-    ri_truncada = ri[:indice_truncamiento]
+    # CONTROL DE LUNDEBY
+    if usar_lundeby:
+        indice_truncamiento, _ = metodo_lundeby(ri, fs)
+        ri_truncada = ri[:indice_truncamiento]
+    else:
+        ri_truncada = ri
     # ====================================================================
 
-    # 2. Tiempos de Reverberación Globales (sobre la señal truncada)
     envolvente = integral_schroeder(ri_truncada)
     t = np.arange(len(ri_truncada)) / fs
 
@@ -314,7 +291,6 @@ def calcular_parametros_globales(ri: np.ndarray, fs: int) -> dict:
     t20 = calcular_tx(indice_5, indice_25)
     t30 = calcular_tx(indice_5, indice_35)
 
-    # 3. Retornamos un diccionario con las claves idénticas al modelo Pydantic
     return {
         "EDT": edt,
         "T10": t10,
