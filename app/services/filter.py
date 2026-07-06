@@ -8,7 +8,6 @@ from scipy import signal
 
 
 def filtro_octava(signal_in: np.ndarray, fc: float, fs: int, orden: int = 4) -> np.ndarray:
-
     """
     Acciones
     --------

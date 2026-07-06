@@ -24,7 +24,9 @@ def reproducir_y_grabar(signal: np.ndarray, fs: int, duracion_grabacion: float, 
     np.ndarray
         Vector 1D con la señal de audio grabada (formato mono).
     """
-    # 1. Validaciones de consistencia
+    
+    # Hacemos validaciones de consistencia.
+    
     if signal.ndim > 1:
         raise ValueError("La señal de excitación debe ser un arreglo unidimensional (mono).")
 
@@ -32,7 +34,8 @@ def reproducir_y_grabar(signal: np.ndarray, fs: int, duracion_grabacion: float, 
     muestras_pre_roll = int(pre_roll * fs)
     muestras_senal = len(signal)
 
-    # Validar que el tiempo total solicitado cubra al menos el estímulo y el pre-roll
+    # Validamos que el tiempo total solicitado cubra al menos el estímulo y el pre-roll.
+
     if muestras_totales < (muestras_pre_roll + muestras_senal):
         duracion_minima = (muestras_pre_roll + muestras_senal) / fs
         raise ValueError(
@@ -40,12 +43,14 @@ def reproducir_y_grabar(signal: np.ndarray, fs: int, duracion_grabacion: float, 
             f"Debe ser de al menos {duracion_minima:.2f}s para cubrir el pre-roll y la señal."
         )
 
-    # 2. Construcción del buffer de salida (Zero-padding)
-    # Rellenamos con ceros para mantener el canal en silencio durante el pre-roll y la reverberación
+    # Construímos del buffer de salida (Zero-padding).
+    # Rellenamos con ceros para mantener el canal en silencio durante el pre-roll y la reverberación.
+
     signal_play = np.zeros(muestras_totales, dtype=np.float64)
     signal_play[muestras_pre_roll : muestras_pre_roll + muestras_senal] = signal
 
-    # 3. Interacción sincrónica con hardware y manejo de excepciones de dispositivo
+    # Interacción sincrónica con hardware y manejo de excepciones de dispositivo.
+    
     try:
         grabacion = sd.playrec(
             signal_play,
@@ -62,6 +67,7 @@ def reproducir_y_grabar(signal: np.ndarray, fs: int, duracion_grabacion: float, 
     except Exception as e:
         raise RuntimeError(f"Error inesperado durante la ejecución de playrec: {e}") from e
 
-    # 4. Post-procesamiento del resultado
+    # Post-procesamiento del resultado.
     # Sounddevice devuelve una matriz (muestras x canales). Aplanamos a un vector 1D mono.
+    
     return grabacion.flatten()

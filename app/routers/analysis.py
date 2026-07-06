@@ -6,16 +6,14 @@ import numpy as np
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
-# Importaciones de tus servicios
+
 from app.services.acoustic_parameters import calcular_parametros_acusticos, calcular_parametros_globales, metodo_lundeby
 from app.services.signal_utils import cargar_audio
 from app.services.filter import filtro_octava
 
 router = APIRouter()
 
-# ==========================================
-# 1. MODELOS DE RESPUESTA PYDANTIC
-# ==========================================
+"""-----------------------------------------------------------------------------------------------------"""
 
 class LundebyResult(BaseModel):
     muestra_truncamiento: int = Field(..., description="Índice de la muestra de truncamiento")
@@ -40,9 +38,7 @@ class AcousticsByBandsResponse(BaseModel):
     C80: dict[str, float | None]
     Lundeby: dict[str, LundebyResult] = Field(default_factory=dict, description="Resultados de Lundeby por banda de frecuencia")
 
-# ==========================================
-# 2. FUNCIÓN AUXILIAR (Manejo de Archivos)
-# ==========================================
+"""-----------------------------------------------------------------------------------------------------"""
 
 async def procesar_audio_subido(file: UploadFile) -> tuple[np.ndarray, int, str]:
     """Guarda el archivo temporalmente, lo carga a mono y devuelve (señal, fs, ruta)."""
@@ -75,9 +71,8 @@ async def procesar_audio_subido(file: UploadFile) -> tuple[np.ndarray, int, str]
             os.remove(ruta_temporal)
         raise HTTPException(status_code=500, detail=f"Fallo al cargar audio: {str(e)}") from e
 
-# ==========================================
-# 3. ENDPOINTS PRINCIPALES
-# ==========================================
+
+"""-----------------------------------------------------------------------------------------------------"""
 
 frecuencias_octava = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
 
@@ -110,6 +105,7 @@ async def calcular_parametros_global_endpoint(file: UploadFile = File(...)):
         if os.path.exists(ruta_temporal):
             os.remove(ruta_temporal)
 
+"""-----------------------------------------------------------------------------------------------------"""
 
 @router.post("/parameters/by-bands", response_model=AcousticsByBandsResponse, summary="Calcular Parámetros y Lundeby por Bandas")
 async def calcular_parametros_bandas_endpoint(file: UploadFile = File(...)):
@@ -120,14 +116,16 @@ async def calcular_parametros_bandas_endpoint(file: UploadFile = File(...)):
     senal_numpy, fs, ruta_temporal = await procesar_audio_subido(file)
 
     try:
-        # 1. Análisis de parámetros acústicos por bandas
+        # Análisis de parámetros acústicos por bandas.
+
         resultados_acusticos = calcular_parametros_acusticos(ri=senal_numpy, fs=fs)
         
         resultados_formateados = {}
         for parametro, valores in resultados_acusticos.items():
             resultados_formateados[parametro] = {str(frec): val for frec, val in valores.items()}
 
-        # 2. Análisis de Lundeby iterando por el banco de filtros
+        # Análisis de Lundeby iterando por el banco de filtros.
+        
         f_nyquist = fs / 2
         lundeby_por_banda = {}
         
@@ -138,7 +136,9 @@ async def calcular_parametros_bandas_endpoint(file: UploadFile = File(...)):
             ri_filtrada = filtro_octava(senal_numpy, fc, fs)
             trunc_sample, noise_level = metodo_lundeby(ri_filtrada, fs)
             
-            # Se usa el str(fc) como clave para que coincida con las claves de los otros parámetros en el JSON
+            # Se usa el str(fc) como clave para que coincida con las claves de los otros 
+            # parámetros en el JSON.
+            
             clave_banda = str(fc) if fc % 1 != 0 else str(int(fc))
             
             lundeby_por_banda[clave_banda] = LundebyResult(
@@ -156,3 +156,5 @@ async def calcular_parametros_bandas_endpoint(file: UploadFile = File(...)):
     finally:
         if os.path.exists(ruta_temporal):
             os.remove(ruta_temporal)
+
+"""-----------------------------------------------------------------------------------------------------"""
