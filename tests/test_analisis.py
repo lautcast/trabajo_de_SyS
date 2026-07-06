@@ -3,7 +3,7 @@
 
 import numpy as np
 
-from app.services.acoustic_parameters import calcular_parametros_acusticos, integral_schroeder, regresion_lineal, suavizar_signal
+from app.services.acoustic_parameters import calcular_parametros_acusticos, integral_schroeder, metodo_lundeby, regresion_lineal, suavizar_signal
 
 
 class TestRegresionLineal:
@@ -192,3 +192,67 @@ class TestParametrosAcusticos:
         for frecuencia, c80_calculado in parametros['C80'].items():
             assert c80_calculado > 0.0, \
                 f"Fallo en banda {frecuencia}Hz: C80 dio {c80_calculado} dB, debía ser positivo."
+
+class TestMeteodoLundeby:
+
+    def test_lundeby_caso_ideal():
+       """Simula una Respuesta al Impulso real: un decaimiento exponencial (reverberación) que se hunde en un piso de ruido estacionario."""
+
+    fs = 44100
+    duracion = 2.0
+    t = np.linspace(0, duracion, int(fs * duracion), endpoint=False)
+    
+    #Fijamos la semilla para evitar Flaky Tests con el ruido aleatorio
+    np.random.seed(42)
+    
+    #Fabricamos la "Reverberación" (Decaimiento exponencial modulando ruido)
+    #Hacemos que caiga aprox 60 dB en 1 segundo
+    decay = 6.907  # exp(-6.907) = 0.001 (que equivale a -60 dB de amplitud)
+    ri_limpia = np.exp(-decay * t) * np.random.randn(len(t))
+    
+    #Fabricamos el "Piso de Ruido" (Hiss estacionario)
+    #Nivel RMS aproximado de 0.001 (-60 dB)
+    ruido_fondo = np.random.normal(0, 0.001, len(t))
+    
+    #Mezclamos para crear la señal sintética
+    ri_sintetica = ri_limpia + ruido_fondo
+    
+    #Ejecutamos el algoritmo
+    trunc_idx, noise_db = metodo_lundeby(ri_sintetica, fs)
+    
+    #Verificamos los tipos de datos int y float, respectivamente, para el índice de truncamiento y el nivel de ruido
+    assert isinstance(trunc_idx, int), "El índice de truncamiento debe ser un entero"
+    assert isinstance(noise_db, float), "El nivel de ruido debe ser un float"
+    
+    #Se audita la estimación del ruido
+    #El ruido sintético lo seteamos en ~ -60 dB (dependiendo un poco de la semilla y la ventana)
+    #Le damos una tolerancia de +- 5 dB
+    assert -65 < noise_db < -55, f"Lundeby calculó mal el ruido: {noise_db:.2f} dB"
+    
+    #Chequeamos el punto de truncamiento
+    #La señal limpia cruzó el nivel del ruido en t = 1.0 segundos aprox
+    #Tolerancia de +- 0.2 segundos (Lundeby calcula por bloques de 10ms a 50ms, así que no es exacto)
+    t_trunc = trunc_idx / fs
+    assert 0.8 < t_trunc < 1.2, f"Lundeby truncó en el segundo incorrecto: {t_trunc:.2f} s"
+
+
+def test_lundeby_senal_sin_caida():
+    """
+    Test de resiliencia: Si le pasamos puro ruido (sin reverberación que caiga), 
+    Lundeby no debería entrar en un bucle infinito ni explotar, sino activar su fallback.
+    """
+    fs = 44100
+    np.random.seed(42)
+    
+    #2 segundos de puro ruido constante
+    puro_ruido = np.random.normal(0, 0.1, fs * 2) 
+    
+    trunc_idx, noise_db = metodo_lundeby(puro_ruido, fs)
+    
+    #
+    #Como la regresión lineal detectará que la pendiente no cae (slope >= 0), 
+    #el fallback del código está programado para devolver el largo original - 1.
+    assert trunc_idx == len(puro_ruido) - 1, "El fallback de seguridad de Lundeby no se activó correctamente"
+    
+    #El ruido debería medirse relativamente alto
+    assert noise_db > -30, f"El ruido se midió demasiado bajo para ser ruido puro: {noise_db} dB"
