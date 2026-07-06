@@ -66,41 +66,41 @@ def suavizar_signal(signal: np.ndarray, ventana: int|str = 'hilbert') -> np.ndar
 
 def integral_schroeder(ri: np.ndarray) -> np.ndarray:
     """Calcula la integral de Schroeder (Energy Decay Curve).
-    
+
     Parameters
     ----------
     ri : np.ndarray --> Respuesta al impulso (array 1D).
-    
+
     Returns
     -------
     np.ndarray --> Curva de decaimiento energetico (EDC), normalizada.
-    
+
     References
     ----------
     .. [1] Schroeder, M. R. (1965). "New method of measuring reverberation
        time." The Journal of the Acoustical Society of America.
     """
-    # Elevamos la señal al cuadrado para obtener la energía de cada muestra
+
+    # Elevamos la señal al cuadrado para obtener la energía de cada muestra.
+
     energia = ri ** 2
-    
-    # MEJORA: Encontramos el pico máximo para ignorar el "pre-ringing" del filtro
-    pico_idx = np.argmax(energia)
-    
-    # Separamos solo la parte de la caída (desde el pico hasta el final)
-    energia_caida = energia[pico_idx:]
-    
-    # Schroeder iterando al revés SOLO en la parte de la caída
-    edc_caida = np.cumsum(energia_caida[::-1])[::-1]
-    
-    # Rellenamos para no cambiar el tamaño del array original (así no se rompen tus tests ni las regresiones)
-    edc = np.zeros_like(energia)
-    edc[:pico_idx] = edc_caida[0]  # Mantenemos plano antes del pico
-    edc[pico_idx:] = edc_caida
-    
-    # Pasamos a la EDC a escala logarítmica
+
+    # Damos vuelta el arreglo para calcular la integral discreta.
+
+    energia_inversa = energia[::-1]
+
+    # Llevamos a cabo la integral discreta con la función np.cumsum().
+    # El parámetro [::-1] al final lo vuelve a poner en el orden cronológico correcto.
+
+    edc = np.cumsum(energia_inversa)[::-1]
+
+    # Pasamos a la EDC a escala logarítmica, utilizando un valor muy cercano a cero al que llamnamos épsilon
+    # para evitar la división por cero.
+
     epsilon = np.finfo(float).eps
+
     edc_db = 10 * np.log10(edc / edc[0] + epsilon)
-    
+
     return edc_db
 
 
