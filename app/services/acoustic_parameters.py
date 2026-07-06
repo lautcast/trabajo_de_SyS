@@ -262,36 +262,16 @@ def calcular_parametros_acusticos(ri: np.ndarray, fs: int, usar_lundeby: bool = 
     return resultados
 
 
-<<<<<<< HEAD
 def calcular_parametros_globales(ri: np.ndarray, fs: int, usar_lundeby: bool = True) -> dict:
     """Calcula los parámetros acústicos para la señal completa sin aplicar filtrado."""
-=======
-def calcular_parametros_globales(ri: np.ndarray, fs: int) -> dict:
-    """
-    Calcula los parámetros acústicos para la señal completa sin aplicar filtrado.
-    Retorna un diccionario con las métricas calculadas.
-    """
-    
-    # Cálculos de Energía
->>>>>>> main
     
     ri_cuadrado = ri ** 2
     energia_total = np.sum(ri_cuadrado)
 
-<<<<<<< HEAD
-=======
-    # D50 Global
-
->>>>>>> main
     n50 = int(0.050 * fs)
     energia_50 = np.sum(ri_cuadrado[:n50])
     d50 = float((energia_50 / energia_total) * 100) if energia_total > 0 else 0.0
 
-<<<<<<< HEAD
-=======
-    # C80 Global
-
->>>>>>> main
     n80 = int(0.080 * fs)
     energia_80 = np.sum(ri_cuadrado[:n80])
     energia_tardia_80 = np.sum(ri_cuadrado[n80:])
@@ -300,7 +280,6 @@ def calcular_parametros_globales(ri: np.ndarray, fs: int) -> dict:
     else:
         c80 = None
 
-<<<<<<< HEAD
     # ====================================================================
     # CONTROL DE LUNDEBY Y GUARDADO DE DATOS
     if usar_lundeby:
@@ -314,12 +293,6 @@ def calcular_parametros_globales(ri: np.ndarray, fs: int) -> dict:
 
     envolvente = integral_schroeder(ri_truncada)
     t = np.arange(len(ri_truncada)) / fs
-=======
-    # Tiempos de Reverberación Globales.
-
-    envolvente = integral_schroeder(ri)
-    t = np.arange(len(ri)) / fs
->>>>>>> main
 
     def buscar_indice(array, value) -> int:
         return int((np.abs(array - value)).argmin())
@@ -344,7 +317,6 @@ def calcular_parametros_globales(ri: np.ndarray, fs: int) -> dict:
     t20 = calcular_tx(indice_5, indice_25)
     t30 = calcular_tx(indice_5, indice_35)
 
-<<<<<<< HEAD
     return {
         "EDT": edt,
         "T10": t10,
@@ -355,13 +327,6 @@ def calcular_parametros_globales(ri: np.ndarray, fs: int) -> dict:
         "Lundeby_Cruce": indice_truncamiento,
         "Ruido_Fondo_dB": nivel_ruido
     }
-=======
-    # Retornamos un diccionario con las claves idénticas al modelo Pydantic.
-
-    return {"EDT": edt, "T10": t10, "T20": t20, "T30": t30, "D50": d50, "C80": c80}
-
-
->>>>>>> main
 
 def metodo_lundeby(ri: np.ndarray, fs: int) -> tuple[int, float]:
     """Determina el punto de truncamiento de la RI con el nivel de ruido usando el metodo de Lundeby.
