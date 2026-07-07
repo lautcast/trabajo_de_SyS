@@ -1,4 +1,4 @@
-"Milestone 2 a 3: Endpoints de Filtrado"
+"""Endpoints de Filtrado"""
 
 import numpy as np
 import io

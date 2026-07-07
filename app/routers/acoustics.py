@@ -1,11 +1,9 @@
-"Milestone 3: Endpoints de análisis"
+"""Endpoints de Acoustics"""
 
-
+import os
 import numpy as np
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from pydantic import BaseModel, Field
-import os
-
 from app.services.acoustic_parameters import calcular_parametros_acusticos, calcular_parametros_globales
 from app.routers.analysis import procesar_audio_subido
 

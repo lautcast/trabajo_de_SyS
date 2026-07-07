@@ -17,9 +17,8 @@ app = FastAPI(
 )
 
 # Routers
-app.include_router(health.router)
 
-# TODO (M3): Agregar routers de signals, filters, acoustics, analysis, utils
+app.include_router(health.router)
 app.include_router(signals.router, prefix="/api/v1/signals", tags=["signals"])
 app.include_router(filters.router, prefix="/api/v1/filters", tags=["filters"])
 app.include_router(acoustics.router, prefix="/api/v1/acoustics", tags=["acoustics"])

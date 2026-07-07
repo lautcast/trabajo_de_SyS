@@ -1,11 +1,9 @@
-"""Health check endpoint."""
+"""Endpoint de Health Check"""
 
 from datetime import datetime
-
 from fastapi import APIRouter
 
 router = APIRouter()
-
 
 @router.get("/health")
 async def health_check():
