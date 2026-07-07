@@ -16,7 +16,7 @@ class TestAPIEndpointsyHealthCheck:
 
     def test_health_check(self):
         """Verifica que el endpoint de salud esté operativo."""
-        client = TestClient(app) # (O borrá esta línea si ya definiste 'client' arriba de todo)
+        client = TestClient(app) 
         response = client.get("/health")
         assert response.status_code == 200
         assert response.json()["status"] == "healthy"
@@ -54,7 +54,7 @@ class TestAPIEndpointsyHealthCheck:
          #Verificamos que el pedido fue exitoso
          assert response.status_code == 200
 
-         # Verificamos que el servidor nos está devolviendo un archivo de audio y no un texto
+         #Verificamos que el servidor nos está devolviendo un archivo de audio y no un texto
          assert response.headers["content-type"] == "audio/wav"
 
     def test_invalid_file_returns_422(self):

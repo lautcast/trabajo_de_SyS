@@ -105,7 +105,7 @@ sequenceDiagram
 
 - [x] Implementar `generar_ruido_rosa()` en `app/services/pink_noise.py`.
 - [x] Implementar `generar_sine_sweep()` en `app/services/sine_sweep.py`.
-- [ ] Implementar `reproducir_y_grabar()`.
+- [x] Implementar `reproducir_y_grabar()`.
 - [x] Todos los tests de `test_generacion.py` deben pasar.
 
 ### M2 — Procesamiento de senales
@@ -126,7 +126,7 @@ sequenceDiagram
 - [x] Implementar `calcular_parametros_acusticos()` en `app/services/acoustic_parameters.py`.
 - [x] Crear routers y schemas para exponer toda la funcionalidad como API REST.
 - [x] Todos los tests de `test_analisis.py` y `test_api.py` deben pasar.
-- [ ] (Opcional) Implementar `metodo_lundeby()`.
+- [x] (Opcional) Implementar `metodo_lundeby()`.
 
 
 ### Estrategia de ramas
