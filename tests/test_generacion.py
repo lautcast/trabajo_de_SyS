@@ -14,27 +14,27 @@ class TestGenerarRuidoRosa:
     def test_ruido_rosa_duracion(self):
         """Verifica que la longitud de la senal corresponda a duracion * fs."""
 
-        # Usamos la funcion generar_ruido_rosa con parametros genericos.
+        #Usamos la funcion generar_ruido_rosa con parametros genericos.
 
         duracion = 2.0
         fs = 44100
         ruido = generar_ruido_rosa(duracion, fs)
 
-        # Definimos una variable que exiba la cantidad de muestras esperada en la senal.
+        #Definimos una variable que exiba la cantidad de muestras esperada en la senal.
 
         expected_length = int(duracion * fs)
 
-        assert len(ruido) == expected_length        # Verificamos que la cantidad de muestras del ruido rosa es igual a la variable.
+        assert len(ruido) == expected_length        #Verificamos que la cantidad de muestras del ruido rosa es igual a la variable.
 
 
     def test_ruido_rosa_tipo(self):
         """Verifica que la funcion retorna un np.ndarray."""
 
-        # Usamos la funcion generar_ruido_rosa con parametros genericos
+        #Usamos la funcion generar_ruido_rosa con parametros genericos
 
         ruido = generar_ruido_rosa(1.0, 44100)
 
-        assert isinstance(ruido, np.ndarray)        # Verificamos que el elemento devuelto por la funcion sea un array.
+        assert isinstance(ruido, np.ndarray)        #Verificamos que el elemento devuelto por la funcion sea un array.
 
 
     def test_ruido_rosa_normalizado(self):
@@ -51,7 +51,7 @@ class TestGenerarRuidoRosa:
     def test_distribucion_espectral_ruido_rosa(self):
         """Verifica que la densidad espectral caiga a razon de 1/f (pendiente ~ -1 en log-log)."""
 
-        # Usamos la funcion generar_ruido_rosa con parametros genericos
+        #Usamos la funcion generar_ruido_rosa con parametros genericos
 
         fs = 44100
         duracion = 5.0
@@ -80,16 +80,16 @@ class TestGenerarRuidoRosa:
         pendiente = coeficientes[0]
 
         #Verificamos que la pendiente este cerca de -1.0
-        # Pasamos a escala logaritmica (base 10)
+        #Pasamos a escala logaritmica (base 10)
 
         log_f = np.log10(f_util)
         log_psd = np.log10(psd_util)
 
-        # Ajuste lineal para encontrar la pendiente
+        #Ajuste lineal para encontrar la pendiente
         coeficientes = np.polyfit(log_f, log_psd, 1)
         pendiente = coeficientes[0]
 
-        # Verificamos que la pendiente este cerca de -1.0
+        #Verificamos que la pendiente este cerca de -1.0
         assert np.isclose(pendiente, -1.0, atol=0.2), f"Fallo: Pendiente fue {pendiente:.2f}, se esperaba ~ -1.0"
 
 class TestGenerarSineSweep:
@@ -98,7 +98,7 @@ class TestGenerarSineSweep:
     def test_sine_sweep_retorna_tupla(self):
         """Verifica que retorna una tupla con dos arrays."""
 
-        # Usamos la funcion generar_sine_sweep con parametros genericos
+        #Usamos la funcion generar_sine_sweep con parametros genericos
 
         resultado = generar_sine_sweep(20, 20000, 1.0, 44100)
 
@@ -116,7 +116,7 @@ class TestGenerarSineSweep:
     def test_sine_sweep_duracion(self):
         """Verifica que ambas senales tienen la longitud correcta."""
 
-        # Usamos la funcion de generar_sine_sweep con parametros genericos.
+        #Usamos la funcion de generar_sine_sweep con parametros genericos.
 
         duracion = 3.0
         fs = 44100
@@ -124,7 +124,7 @@ class TestGenerarSineSweep:
         #Generamos un sweep de 20 Hz a 20000 Hz
         sweep, filtro_inv = generar_sine_sweep(20, 20000, duracion, fs)
 
-        # Definimos una variable la cual contiene al numero de muestras del sine sweep segun nuestros parametros genericos.
+        #Definimos una variable la cual contiene al numero de muestras del sine sweep segun nuestros parametros genericos.
 
         expected_length = int(duracion * fs)
 
@@ -138,46 +138,46 @@ class TestGenerarSineSweep:
     def test_sine_sweep_progresion_frecuencias(self):
         """Verifica que la frecuencia de la señal aumente con el tiempo."""
 
-        # Usamos la funcion de generar_sine_sweep con parametros genericos.
+        #Usamos la funcion de generar_sine_sweep con parametros genericos.
 
         fs = 44100
         duracion = 2.0
 
-        # Generamos un sweep de 20 Hz a 20000 Hz
+        #Generamos un sweep de 20 Hz a 20000 Hz
 
         sweep, _ = generar_sine_sweep(20, 20000, duracion, fs)
 
-        # Tomamos una ventana pequeña de muestras al inicio y al final (ej: 0.1 segundos)
+        #Tomamos una ventana pequeña de muestras al inicio y al final (ej: 0.1 segundos)
 
-        muestras_ventana = int(0.1 * fs)                # En este caso, tomamos 4410 muestras
-        fragmento_inicio = sweep[:muestras_ventana]     # Las primeras 4410 muestras.
-        fragmento_fin = sweep[-muestras_ventana:]       # Las ultimas 4410 muestras.
+        muestras_ventana = int(0.1 * fs)                #En este caso, tomamos 4410 muestras
+        fragmento_inicio = sweep[:muestras_ventana]     #Las primeras 4410 muestras.
+        fragmento_fin = sweep[-muestras_ventana:]       #Las ultimas 4410 muestras.
 
-        # Definimos una función auxiliar para encontrar la frecuencia con más energía usando FFT.
+        #Definimos una función auxiliar para encontrar la frecuencia con más energía usando FFT.
 
         def obtener_frecuencia_dominante(senal_fragmento, fs):
 
-            # Calculamos el espectro de frecuencias del fragmento.
+            #Calculamos el espectro de frecuencias del fragmento.
 
             espectro = np.abs(np.fft.rfft(senal_fragmento))
             frecuencias = np.fft.rfftfreq(len(senal_fragmento), 1/fs)
 
-            # Buscamos el índice donde el espectro tiene su pico máximo.
+            #Buscamos el índice donde el espectro tiene su pico máximo.
 
             indice_pico = np.argmax(espectro)
 
             return frecuencias[indice_pico]
 
-        # Calculamos las frecuencias dominantes.
+        #Calculamos las frecuencias dominantes.
 
         frec_inicio = obtener_frecuencia_dominante(fragmento_inicio, fs)
         frec_fin = obtener_frecuencia_dominante(fragmento_fin, fs)
 
-        # Verificamos con Asserts que la frecuencia del final sea estrictamente mayor que la del inicio.
+        #Verificamos con Asserts que la frecuencia del final sea estrictamente mayor que la del inicio.
 
         assert frec_fin > frec_inicio, "Fallo: La frecuencia no aumenta con el tiempo"
 
-        # Comprobamos que arranca en bajas frecuencias y termina en altas.
+        #Comprobamos que arranca en bajas frecuencias y termina en altas.
         
         assert frec_inicio < 1000, f"Fallo: Arranca con frecuencia muy alta ({frec_inicio} Hz)"
         assert frec_fin > 10000, f"Fallo: Termina con frecuencia muy baja ({frec_fin} Hz)"
